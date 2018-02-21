@@ -1,0 +1,100 @@
+<%= javascript_include_tag 'members_datatable.js', :plugin => "redmine_wktime" %>
+<%= javascript_include_tag 'jquery.dataTables.js', :plugin => "sla_reports" %>
+<%= stylesheet_link_tag 'datatable.css', :plugin => "sla_reports" %>
+
+<%= error_messages_for 'member' %>
+<%# cache 'recent_members' do %>
+<% roles = Role.find_all_givable
+   members = @members_list %>
+
+<div class="splitcontentleft">
+  <% if (members.present? && members.any?) %>
+      <table class="list members" id="test" data-project_id="<%= @project.id%>">
+        <thead>
+        <tr>
+          <th><%= l(:label_user) %> / <%= l(:label_group) %></th>
+          <th><%= l(:label_role_plural) %></th>
+          <th style="width:15%"></th>
+          <%= call_hook(:view_projects_settings_members_table_header, :project => @project) %>
+          <th>Customize</th>
+        </tr>
+        </thead>
+        
+      </table>
+  <% else %>
+      <p class="nodata"><%= l(:label_no_data) %></p>
+  <% end %>
+
+<div class="member_pagination">
+  <%= render :partial=>"projects/settings/members_pagination" %>
+</div>
+  <!-- <p class="pagination">
+    <%# params[:page_param] = params[:page].present? ? params[:page] : 1 %>
+    <%#= will_paginate @members_list, :params => {:project_id => params[:project],:controller => 'projects', :action => 'settings'} %>
+   <% unless (params[:membership].present? || params[:action] == 'destroy') %>
+    <%= pagination_links_full @member_pages1, @member_count1 %></p>
+   <% end %> -->
+</div>
+
+
+
+<div class="splitcontentright">
+  <% if roles.any? %>
+      <%= form_for(@member,
+                   {:as => :membership, :url => project_memberships_path(@project),
+                    :remote => true, :method => :post}) do |f| %>
+          <fieldset>
+            <legend><%=l(:label_member_new)%></legend>
+            <%= call_hook(:view_projects_settings_members_new_user_header, :project => @project) %>
+
+            <p>
+              <%= label_tag("principal_search", l(:label_principal_search)) %>
+              <%= text_field_tag('principal_search', nil) %>
+            </p>
+            <%= javascript_tag "observeSearchfield('principal_search', null, '#{ escape_javascript autocomplete_project_memberships_path(@project, :format => 'js') }')" %>
+            <div id="principals_for_new_member">
+              <%= render_principals_for_new_members(@project) %>
+            </div>
+            <p>
+              <%= l(:label_role_plural) %>:
+              <% roles.each do |role| %>
+                  <label><%= check_box_tag 'membership[role_ids][]', role.id, false, :id => nil %> <%= role %></label>
+              <% end %>
+            </p>
+            <p><%= submit_tag l(:button_add), :id => 'member-add-submit' %></p>
+          </fieldset>
+      <% end %>
+  <% end %>
+</div>
+
+
+<%# end %>
+<%= javascript_tag defer: 'defer' do -%>
+    $(document).ready(function(){
+     $('#tab-members').click(function(){
+      $('.splitcontentleft p.pagination a').each(function () {
+        var url = $(this).attr('href');
+        change = url.split('?')
+        total = url.split('/')
+        if (total.length < 5){
+            url =  change[0] + '/members?' + change[1]
+        }
+        if (total.length == 5 && change[0].split('/').pop() != 'members'){
+            str = change[0]
+            res = str.substring(0, str.lastIndexOf("/") + 1);
+          url =  res + 'members?' + change[1]
+        }
+        console.log(url)
+        <!--url = url.replace('/','');-->
+        $(this).attr('href',url);
+      });
+     });
+    });
+
+<% end -%>
+
+<script>
+$('#tab-members').click(function(){
+$('.pagination').show()
+})
+</script>

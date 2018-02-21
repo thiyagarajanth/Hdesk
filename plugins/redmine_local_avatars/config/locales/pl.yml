@@ -1,0 +1,4 @@
+# Polish strings go here
+pl:
+  label_avatar: "Awatar"
+  message_avatar_uploaded: "Awatar został poprawnie załadowany"

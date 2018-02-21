@@ -1,0 +1,19 @@
+# German strings go here
+de:
+  label_avatar: "Avatar"
+  label_my_avatar: "Mein Avatar"
+  label_cameras: "Kameras"
+  label_capture_or_upload: "Aufnehmen oder Hochladen"
+  label_preview_and_crop: "Vorschau und zuschneiden"
+  label_preview: "Vorschau"
+  label_upload: "Hochladen"
+  label_webcam: "Webcam"
+
+  button_change_avatar: "Avatar anpassen"
+  button_stop_webcam: "Stop"
+  button_start_webcam: "Start"
+  button_capture_photo: "Aufnehmen"
+  are_you_sure_delete_avatar: "Wollen Sie den Avatar entfernen?"
+  avatar_deleted:  "Avatar entfernt."
+  unable_to_delete_avatar:  "Leider ist beim Löschen des Avatars ein Problem aufgetreten!"
+  message_avatar_uploaded: "Avatar erfolgreich hochgeladen"

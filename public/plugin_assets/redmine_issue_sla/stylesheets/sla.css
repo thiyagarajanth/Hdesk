@@ -1,0 +1,105 @@
+#response_area{
+    display: none;
+}
+.select_all{
+    margin-left: 15px;
+    margin-bottom: 5px;
+}
+table.list th{
+    text-align: center;
+}
+
+#back_to_trackes{
+    float: right;
+    color: red;
+    
+}
+.select_tracker{
+    background-color: #EEEEEE;
+    color: #505050;
+    line-height: 1.5em;
+    border: 1px solid #e4e4e4;
+    height: auto;
+    width: 15%;
+    margin: 10% auto;
+    padding: 2%;
+}
+#tracker_id{
+    margin-top: 5%;
+    margin-left: 16%;
+}
+#apply_tracker{
+    margin-left: 23%;
+}
+.tracker{
+    padding: 3px 10px 25px 0px;
+    font-size: 12px;
+    font-weight: bold;
+    width: 100%;
+}
+.tracker span:first-child{
+    float: left;
+    width: 40%;
+}
+.tracker span:last-child{
+    float: right;
+    width:40%;
+}
+.select_tracker1 #tracker_id{
+    margin-top: 5% !important;
+    margin-left: 16% !important;
+}
+
+.add_width{
+    width:10%
+}
+.add_width_status{
+    width: 45%;
+    text-align: center;
+}
+.add_width_sla{
+    width: 40%;
+    text-align: center;
+}
+.add_width_sla1, .add_width_sla2{
+    width:16%;    
+}
+.list_scrol{
+    display: block;
+    overflow-y: scroll;
+    width: 100%;
+    height: 200px;
+}
+.add_padding{
+    padding-left: 50px;
+}
+.priority_list thead,.scroll thead{
+    display: block;
+}
+.day_sla{
+    float:left;width:9%;border-right: 2px solid #D0D2D8;padding:2%;
+}
+.working_hr{
+    width:16%; float:left;padding-left: 16px;padding-bottom: 50px;
+}
+.tr_status{
+    float:left;padding:2%;width:33%;border-right: 2px solid #D0D2D8;
+}
+.tr_priority{
+    float:left;padding:2%;width:25%;border-right: 2px solid #D0D2D8;
+}
+.break_time{
+    width: 60px;
+}
+
+fieldset {
+    border: 2px solid #e4e4e4;
+    margin: 5px 0px;
+}
+
+legend{font-weight: bold}
+
+hr{
+    float: left;}
+
+

@@ -1,0 +1,139 @@
+<%= javascript_include_tag 'request.js', :plugin => "sla_reports" %>
+<%= javascript_include_tag 'jquery.dataTables.js', :plugin => "sla_reports" %>
+<%= javascript_include_tag 'buttons.html5.min.js', :plugin => "sla_reports" %>
+<%= javascript_include_tag 'dataTables.buttons.min.js', :plugin => "sla_reports" %>
+<%= stylesheet_link_tag 'datatable.css', :plugin => "sla_reports" %>
+<%= stylesheet_link_tag 'buttons.dataTables.min.css', :plugin => "sla_reports" %>
+
+
+<h2>Validity </h2>
+<%= form_tag({ :controller => 'sla_reports', :action => 'request_validity', :project_id => @project.id },
+             :method => :get) do %>
+    <div id="query_form_with_buttons" >
+      <fieldset id="date-range" >
+        <div >
+            <%= label_tag 'Request'%>
+            <%= select_tag 'request', options_from_collection_for_select(get_validity_list(@project),'id', 'name',params[:request]), :prompt => 'All Request' %>
+            <span >
+              <%= l(:label_date_from_to, :start => (text_field_tag('from1',params[:from1], :size => 10, placeholder: 'Upto date') + calendar_for('from1')),
+              :end => (text_field_tag('to1', params[:to1], :size => 10 ,placeholder: 'Upto date') + calendar_for('to1'))).html_safe %>
+            </span>
+             </div>
+      </fieldset>
+            <!--commented below div for datatable feature establishment -->
+            <!--   <div class = "user_search">
+              <span>
+                <% user_id = '',user_name = '' %>
+                <% ruid = params[:request_user_id].to_i%>
+                <% if ruid.present? && ruid > 0 %>
+                  <% user = Principal.find(ruid) %>
+                  <% user_id = user.id %>
+                  <% user_name = user.name %>
+                <% end %>
+
+                <% cssOverride = params[:employee_id].nil? ? '' : '' %>
+                <% cssOverride1 = params[:employee_id].nil? ? '' : '' %>
+                <%= radio_button_tag 'userfield',false, !params[:employee_id].present?,class:"user_select_field "  %> 
+                <%= label_tag 'User'%>
+
+                <%=text_field_tag 'request_user_id',nil,class:'autofill '+ cssOverride1, 'data-user_id' =>[user_id, user_name], :disabled => params[:employee_id].present? %>
+
+              </span>
+              <span>
+                <%= radio_button_tag 'userfield',nil, params[:employee_id].present?,class:"user_text_field "  %>Employee ID
+                <%= search_field_tag 'employee_id',params[:employee_id],class:'id_field '+ cssOverride,  :disabled => !params[:employee_id].present? %>
+              </span>
+            </div>  
+ -->
+
+
+       
+      <p class="buttons">
+        <%= submit_tag l(:button_apply),  :class => 'icon icon-checked' %>
+
+        <%= link_to l(:button_clear), {:controller => controller_name, :action => action_name, :project_id => @project, :issue_id => @issue,:tab => controller_name}, :class => 'icon icon-reload' %>
+      </p>
+
+    </div>
+<% end %>
+
+<div>
+  <% get_request_validity_records(params) if params[:tab] == 'request_validity'%>
+      <% if !@request.present? %>
+          <p class="nodata"><%= l(:label_no_data) %></p>
+      <% else %>
+          <div >
+            <table id="tab" class = 'report_tble' >
+              <thead>
+              <tr>
+                <th >ID</th>
+                <th>Request</th>
+                <th>User Name</th>
+                <th>Employee ID</th>
+                <th>Requested Date</th>
+                <th>Expiration Date</th>
+                <th>Status</th>
+              </tr>
+              </thead>
+              <tbody>
+              <% ids = []%>
+
+              <% @request.each_with_index do |rec, i|%>
+              
+                  <tr class="<%= rec[:status].present? && rec[:status]=="Active" ? "activestatus" : "expired" %>">
+                    <% ids << rec[:id] %>
+                    <td><%= link_to rec[:id],issue_path(rec[:id]), :target => "_blank" %></td>
+                    <td class='right'><%= rec[:request] %></td>
+                    <td class='popupWind right'>
+                      <%=  rec[:user_name] %>
+                    </td>
+                    <td class='popupWind '>
+                      <%=  rec[:emp_id] %>
+                    </td>
+                    <td class='popupWind '>
+                      <%=  rec[:requsted_on].to_date.strftime "%d-%m-%Y" %>
+                    </td>
+                    <td class='popupWind '>
+                          <%=  rec[:valid_till].to_date.strftime "%d-%m-%Y" %>
+                    </td>
+                    <td><%=rec[:status]%> </td>
+                  </tr>
+                
+              <% end %>
+              </tbody>
+            </table>
+          </div>
+
+      <% end %>
+
+</div>
+
+
+
+<%# params[:page] = 10 %>
+<%# @limit = 10 %>
+
+<%# @issue_pages = Redmine::Pagination::Paginator.new @request.count, @limit, params[:page] %>
+           <%#= @issue_pages.inspect %>
+           <%#= @issue_pages.inspect %>
+           <%#= @issue_count %>
+           
+
+
+<%# other_formats_links do |f| %>
+    <%# params[:action] = 'request_validity'%>
+    <%#= f.link_to 'CSV', :url =>params.merge(:request => params[:request],:from1=>params[:from1],:to1=>params[:to1], :report=> true) %>
+    <%#= f.link_to 'PDF', :url => params.merge(:request => params[:request],:from1=>params[:from1],:to1=>params[:to1], :report=> true) %>
+<%#end %>
+
+<style>
+    div.dt-buttons {
+        position: relative;
+        float: right;
+    }
+    a.dt-button {
+        position: static;}
+td.right {
+    text-align: left!important;
+}        
+</style>

@@ -1,0 +1,42 @@
+<h2>Request Validity </h2>
+
+<%= form_tag({ :controller => 'sla_reports', :action => 'user_request_validity', :project_id => @project.id },
+             :method => :get) do %>
+<% end %>
+
+<div >
+  <% get_request_validity_records(params) if params[:tab] == 'request_validity'%>
+      <% if !@user_results.present? %>
+          <p class="nodata"><%= l(:label_no_data) %></p>
+      <% else %>
+          <div>
+            <table class="report_tble" >
+              <tr>
+                <th >ID</th>
+                <th >Request</th>
+                <th >Requested Date</th>
+                <th >Expiration Date</th>
+                <th >Status</th>
+              </tr>
+              
+              <% @user_results.each_with_index do |rec, i|%>
+              
+                  <tr class="<%= rec[:status].present? && rec[:status]=="Active" ? "activestatus" : "expired" %>">
+                    <td class = 'request'><%= link_to rec[:id],issue_path(rec[:id]), :target => "_blank" %></td>
+                    <td><%= rec[:request] %></td>
+                    <td class='popupWind' class = 'request'>
+                      <%=  rec[:requsted_on].to_date.strftime "%d-%m-%Y" %>
+                    </td>
+                    <td class='popupWind' class = 'request'>
+                          <%=  rec[:valid_till].to_date.strftime "%d-%m-%Y" %>
+                    </td>
+                    <td id = 'request'><%=rec[:status]%> </td>
+                  </tr>
+              <% end %>
+            </table>
+          </div>
+
+      <% end %>
+
+</div>
+

@@ -1,0 +1,28 @@
+<% dashboard_helper = Object.new.extend(DashboardHelper) %>
+<% if User.current.logged? %>
+<div class="splitcontentleft">
+  <h3><%= l(:label_project_plural) %></h3>
+
+  <div class="projects box">
+
+      <% content_for :header_tags do %>
+   		<%= auto_discovery_link_tag(:atom, {:action => 'index', :format => 'atom', :key => User.current.rss_key}) %>
+		<% end %>
+
+		<div id="projects-index">
+			<%= render_project_hierarchy(@projects) %>
+		</div>
+	</div>
+</div>
+
+<% user_ids =  ApprovalRoleUser.all.map(&:user_id).uniq %>
+<% if user_ids.include? User.current.id %>
+    <div class="splitcontentright">
+      <div class="projects-index">
+        <%= render :partial => "my/blocks/ticketswaitingforapproval", :locals => { :user => @user } %>
+      </div>
+    <div>
+<% end %>
+<% end %>
+
+</div></div>

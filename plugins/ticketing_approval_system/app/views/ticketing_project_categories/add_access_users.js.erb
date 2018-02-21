@@ -1,0 +1,5 @@
+$('#access_users_inputs').empty();
+$('#ajax-modal').html('<%= escape_javascript(render :partial => 'ticketing_project_categories/access_users_new', :locals => {:watched => @watched, :users => @users}) %>');
+showModal('ajax-modal', '400px');
+$('#ajax-modal').addClass('new-watcher');
+$('#access_users_update').show();

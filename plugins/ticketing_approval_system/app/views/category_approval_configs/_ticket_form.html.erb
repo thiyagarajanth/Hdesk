@@ -1,0 +1,243 @@
+<% status = params[:approval]%>
+<% need_approval = status=='true' ? 'normal_flow' : 'approval'%>
+<tr>
+  <td id="tk_app_cat">
+    <%= f.hidden_field 'project_id', :value =>Project.find_by_identifier(params[:id]).id%>
+    <% if params[:page].present? %>
+        <%= hidden_field_tag 'page',params[:page]%>
+    <%end%>
+    <%if params[:ticket_id].present?%>
+        <%= hidden_field_tag 'ticket_id', params[:ticket_id]%>
+
+    <%end%>
+    <%= f.select(:project_category_id, options_for_select(@project.project_categories.collect{|a|[a.cat_name.capitalize, a.id]},  :selected => params[:project_category_id]), :prompt => '-- Please Select --') %>
+   
+    <%= link_to(image_tag('add.png', :style => 'vertical-align: middle;'),
+                new_project_ticketing_project_category_path(@project),
+                :remote => true,
+                :method => 'get',
+                :title => l(:label_issue_category_new),
+                :tabindex => 200)  %>
+    <%= link_to(image_tag('edit.png', :style => 'vertical-align: middle;'),
+                edit_project_ticketing_project_category_path(@project, ProjectCategory.first.present? ? ProjectCategory.first :  1),
+                :remote => true,
+                :method => 'get',
+                :class => 'app_cat_action',
+                :title => ' Edit Category',
+                :tabindex => 200)  %>
+    <%= link_to(image_tag('delete.png', :style => 'vertical-align: middle;'),
+                '#',
+                :id => 'delete_cat',
+                :class => 'app_cat_action',
+                :title => 'Delete Category',
+                :tabindex => 200)  %>
+
+  </td>
+
+  <td class="tk_app_val <%= need_approval%>"  data_ticket="<%=params[:ticket_tag_id]%>">
+    <div>
+      <% edit_tag = params[:ticket_tag_id].present? %>
+       <%if edit_tag%>
+        <% tag = TicketTag.find(params[:ticket_tag_id]) %>
+        <%s = []%>
+        <%tag_ids = []%>
+        <% 4.times do %>
+          <%s << tag %>
+          <%if tag.present?%>
+            <%= hidden_field_tag 'category_approval_configs[tag_ids][]', tag.id %>
+          <%end%>
+          <% tag = tag.parent rescue nil %>
+        <%end%>
+        <% tag = TicketTag.find(params[:ticket_tag_id]) %>
+        <% name = tag.present? ? tag.name : ''%>
+        <%= hidden_field_tag 'ticket_tag_id', params[:ticket_tag_id]%>
+      <%end%>
+
+      <% if edit_tag && tag.present? %>
+        <%s.compact.reverse.each do |rec|%>
+          <%= f.text_field 'category_approval_configs[values][]', :value => rec.name, :class => 'list_thiyagu', :name => 'category_approval_configs[values][]'%>
+          <%end%>
+      <%else%>  
+        <%= f.text_field 'category_approval_configs[values][]', :value => name,:placeholder=>"This value Mandatory",:class=>'list_tag',:name => 'category_approval_configs[values][]'%>
+      <% end %>
+      
+    </div>
+
+    <%= link_to(image_tag('add.png', :style => 'vertical-align: middle;'),
+                '#',
+                :remote => true,
+                :id => 'add_values',
+                :title => 'Add Value',
+                :tabindex => 200)  %>
+  </td>
+
+  <%roles = ApprovalRole.where(:project_id => @project.id).order('level')%>
+   <% if edit_tag && tag.present? %>
+  <%approval = TicketTag.find(params[:ticket_tag_id])%>
+  <% infos = approval.ticket_approvals %>
+    <% ids = infos.map(&:approval_role_id).compact%>
+    <%= hidden_field_tag 'approval_infos', infos.map(&:id)%>
+  <% end %> 
+  <td class=<%= need_approval%>>
+      <%= f.check_box 'Self', :checked => true, :disabled => true, :name=>'category_approval_configs[levels]'+'self' %>
+    </td>
+  
+  <% roles.each do |role|%>
+    <td class=<%= need_approval%>>
+      <%if role.level >= 1 %>
+        <%= link_to(image_tag('text_list_bullets.png', :style => 'vertical-align: middle;'),'#',{class:'interrupt_ico', :data_interrupt => role.name.tr(" ", "_"),:data_interrupt_role_id => role.id, :title => 'Approval Interruption'})  %>
+      <%end%>
+
+      <%= f.check_box role.name.tr(" ", "_"), {:checked => (ids.include?(role.id) rescue false),:class=>'approval_levels', :name=>'category_approval_configs[levels]'+role.name} %>
+    </td>
+  <%end%>
+  <td class=<%= need_approval%>>
+
+    <%#= f.text_field 'validity','', :value => tag.validity rescue 0 %>
+    <%= f.text_field :validity, value: params[:ticket_tag_id].present? ? approval.validity : 0, size: 3 %>
+  </td>
+  
+  <td class="<%= need_approval%>" data-code="<%= approval.agreement_code rescue ''%>" title="<%= approval.agreement_name rescue ''%>">
+    <%= f.check_box 'have_agreement',{:checked => (approval.have_agreement rescue false)}, nil%>
+  </td>
+  <!-- <div id="agree" style="display:none">
+    
+    <p>Agrement Code: <%= select_tag 'agree_code',options_for_select(ApprovalDefinition.aggrement), prompt: "Select something" %> </p>
+    <p>Agrement Name:<span id="agree_name"> <%= %></span></p>
+    <button type='button' value='Submit' class='save_agreement'>Save</button>
+    <button type='reset' class='cancel_agreement' value='Reset'>Cancel</button>
+  </div> -->
+<span id="dept" data-dept="<%= @project.dept_code%>"></span>
+  <td class=<%= need_approval%>>
+    <%= f.submit 'Submit'%>
+    <%=link_to 'Cancel', settings_project_path(params[:id], :tab => 'ticketing_approval_system'), :type => 'button' %>
+  </td>
+</tr>
+
+
+<script type="text/javascript">
+var code = $('#category_approval_configs_have_agreement').closest('.normal_flow').data('code')
+
+$('.ui-dialog-title').html('Agreement')
+  $('#category_approval_configs_have_agreement').click(function(e){
+    
+    
+    $('#category_approval_configs_have_agreement').prop('checked', false);
+    
+
+      $('#ajax-modal').html("<div class= 'box'><span id='agree_msg' style='display:none'>*Please select agreement name</span><div id='agree'></div>" +
+        "<table><tr id='agree_name'><th>Name <span class='required'>*</span></th><td>   <select id='agreement_select'>" +
+        "<option value=''>--Select Agreement--</option></select></td><tr id='agree_code'><th> Code <span class='required'>*</span></th><td><span class='agreement_code'></span></td></tr><tr><th></th><td> <button type='button' value='Submit' class='save_agreement'>Save</button> <button type='reset' class='cancel_agreement' value='Reset'>Cancel</button> </td></tr></table>"+"</div>");
+      var department = $('#dept').data('dept')
+      $.ajax({url: "/approval_definitions/agreement?dept="+department.toString(), 
+        type: "POST",
+            dataType: "json",
+            // This goes to Controller in params hash, i.e. params[:file_name]
+            complete: function () {
+            },
+        success: function (result) {
+          console.log('ttttttttttttt')
+        $.each(result.values,function(index,item){
+          $('#agreement_select').append(
+            $('<option></option>').text(item[1]).val(item[0]));
+        });
+      }});
+      showModal('ajax-modal', '500px');
+      if($(':checked','#category_approval_configs_have_agreement')==true) {
+          $('#category_approval_configs_have_agreement').prop('checked', false);
+      }
+            e.preventDefault();
+      setTimeout(function() {
+        seleted_value = 
+        $('agreement_select[value=" + selected_value +"]').attr("selected","selected");
+        
+        $('span#ui-id-1').html('Agreement Details')
+      },100);
+      // console.log($('.tk_app_form_tbl #category_approval_configs_have_agreement').is(':checked'))
+      if($('.tk_app_form_tbl #category_approval_configs_have_agreement').is(':checked'))  { $(".remove_agreement").show();   }
+      else {
+        // console.log('test')
+        // console.log($(this).is(':checked'))
+        $(".remove_agreement").hide();
+      }
+      // code = $(this).closest('.normal_flow').data('code')
+      
+      name = $(this).closest('.normal_flow').attr('title')
+
+      if (name != '' && name != 'undefined'){
+        $('#ajax-modal').append("<button type='button' value='Submit' id='remove_agreement'>Remove</button>")
+      }
+      console.log('code---------')
+      console.log(code)
+      if (code != null){
+        codevalues(code);
+      }
+
+  });
+
+ 
+  $(document).on('change','#agreement_select',function(event){
+    var agree_name = $(':selected',this).val()
+    $('.agreement_code').html("<b>"+agree_name+"</b>")
+    $('#agree_msg').hide();
+    code = agree_name
+    codevalues(agree_name)
+    
+  });
+
+
+  $(document).on('click',".save_agreement",function() {
+    var agreement_name = $(':selected','#agreement_select').text();
+    console.log(agreement_name)
+    var agreement_code = $(':selected','#agreement_select').val();
+    agreement_cond = $('#agreement_select').val()  
+    if (agreement_cond == "") {
+      $('#agree_msg').show()
+    }
+    else {
+       $('#agree_msg').hide();
+       $('<input>').attr({ type: 'hidden',  name: 'agreement_code', value: agreement_code}).appendTo('.tk_ap_form form');
+    $('<input>').attr({ type: 'hidden',  name: 'agreement_name',value:agreement_name}).appendTo('.tk_ap_form form');
+    
+    $('#category_approval_configs_have_agreement').prop('checked', true);
+      
+       hideModal();
+    }
+
+  });
+ var a_code = $('#category_approval_configs_have_agreement').closest('td').data('code')
+    $('<input>').attr({ type: 'hidden',  name: 'agreement_code', value: a_code}).appendTo('.tk_ap_form form');
+  $(document).on('click', ".cancel_agreement", function(e) {
+    
+    hideModal();
+    e.preventDefault();
+  });
+
+  $(document).on('click', "#remove_agreement", function() {
+    $('<input>').attr({ type: 'hidden',  name: 'agreement_code', value: ''}).appendTo('.tk_ap_form form');
+    $('<input>').attr({ type: 'hidden',  name: 'agreement_name',value:''}).appendTo('.tk_ap_form form');
+    $('agreement_select').remove();
+    code = ''
+    codevalues('');
+    $('#category_approval_configs_have_agreement').prop('checked', false);
+    
+    hideModal();
+  });
+
+  function codevalues(code){
+    setTimeout(function() {
+      console.log(name)
+      $('#agreement_select').val(code);
+      $('.agreement_code').html("<b>"+code+"</b>")
+    },400);
+  }
+</script>
+
+<style>
+.remove_agreement{
+  margin-left :150px;
+}
+#agree_msg{
+color :red;
+}
+</style>

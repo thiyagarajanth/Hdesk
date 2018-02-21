@@ -1,0 +1,9 @@
+gem 'will_paginate', '~> 3.0.6'
+gem 'api_cache', '~> 0.3.0'
+# gem 'sunspot_rails'
+# gem 'sunspot_solr'
+gem 'writeexcel'
+gem 'roo'
+gem "iconv", "~> 1.0.3"
+gem 'enumerize'
+gem 'pdf-reader'

@@ -1,0 +1,4 @@
+<p>
+  <label for="user_official_info">Employee Id<span class="required"> *</span></label>
+<%= text_field_tag 'user_official_info', @user.user_official_info.present? ? @user.user_official_info.employee_id : "" , :required => true %>
+</p>

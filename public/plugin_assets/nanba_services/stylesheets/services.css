@@ -1,0 +1,36 @@
+table{
+    border: 1px solid #e4e4e4;
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 4px;
+}
+.sync_sevice h3,th{
+    background-color: #EEEEEE;
+    padding: 8px;
+}
+ td{text-align: center;
+    vertical-align: top;
+    padding-right: 10px;}
+ td span img{
+     height: 25px;
+     cursor: pointer;
+ }
+
+#sync_master{width:30%;margin: 0 auto;}
+.sync_sevice h3{text-align: center}
+.sync_sevice{
+    margin: 25px auto;
+    padding: 5px;
+    width:100%;
+    border: 1px solid #e4e4e4;
+    margin-bottom: 4px;
+    float: left;
+    display: none;
+    box-shadow: rgb(136, 136, 136) 10px 10px 5px;
+}
+.sync_sevice div input[type=text],.sync_sevice div{    padding: 5px;}
+.sync_radio span{margin-right: 20px}
+#cancel_sync{float: left}
+#update_sync{    float: right;}
+#emp_ids{width:200px}
+#flash_notice,.syn_err{display: none}

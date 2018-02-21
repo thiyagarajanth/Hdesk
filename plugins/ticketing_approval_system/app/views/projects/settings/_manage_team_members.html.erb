@@ -1,0 +1,44 @@
+
+<%= stylesheet_link_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+<%= javascript_include_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+<div id="errorExplanation" style="display: none;"></div>
+<div id="flash_notice" class='flash notice' style="display: none;"></div>
+<div style='width:100%;float:left'>
+  <div style='width:50%;float:left'><h2 style="float:left">Manage Your Team</h2></div>
+</div>
+
+<div id='team_div'>
+  <%= form_tag manage_team_members_project_approval_definitions_path(@project) do %>
+    <table>
+      <tr>
+        <th>Name</th>
+        <th>Display</th>
+        <th>Display Name</th>
+        <th>Display Designation</th>
+        <th>Order</th>
+      </tr>
+    <%  @project.get_team_members.each_with_index do |rec, i|%>
+          <% profile = @project.team_profiles.find_by_user_id(rec.id) rescue nil %>
+          <% name = profile.name rescue ''%>
+          <% desg = profile.designation rescue ''%>
+          <% priority =  profile.priority rescue nil %>
+          <% state = profile.display rescue false%>
+       <tr>
+        <td> <%= rec.firstname %> </td>
+
+        <td><%= check_box_tag 'display[]',  rec.id , state%></td>
+        <td><%= text_field_tag 'name[]', name %></td>
+        <td><%= text_field_tag 'designation[]', desg %></td>
+        <td><%= number_field_tag 'priority[]',priority%></td>
+        <%= hidden_field_tag 'user_id[]', rec.id%>
+        <%= hidden_field_tag 'project_id', @project.id%>
+          </tr>
+    <% end %>
+    <tr>
+      <td></td><td></td><td></td><td></td>
+      <td style="float: right"><%= submit_tag "Save", class: "" %></td>
+    </tr>
+    </table>
+
+<% end %>
+</div>

@@ -1,0 +1,12 @@
+hideModal();
+$('#errorExplanation').hide()
+<% select = content_tag('select', content_tag('option') + options_from_collection_for_select(@project.project_categories, 'id', 'cat_name', @category.id), :id => 'category_approval_configs_project_category_id', :name => 'category_approval_configs[project_category_id]') %>
+$('#category_approval_configs_project_category_id').replaceWith('<%= escape_javascript(select) %>');
+$('#flash_notice').show().html("<ul><li> Category was successfully created.</li></ul> ")
+$('.app_cat_action').show()
+console.log(('<%= @category.need_approval %>'))
+if ('<%= @category.need_approval %>' == 'true'){
+    $('.approval').show();
+}else{
+    $('.approval').hide();
+}

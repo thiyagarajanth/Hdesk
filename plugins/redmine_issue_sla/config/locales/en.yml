@@ -1,0 +1,24 @@
+  # Sample plugin
+  en:
+    project_module_redmine_issue_sla: Ticket SLA
+    label_issue_sla: Ticket SLA
+    label_ticket_sla: Ticket SLA
+    label_approver_sla: Approver SLA
+    field_allowed_delay: Allowed delay in Hours
+    field_expiration_date: Expiration
+    field_expiration: Expiration
+    field_issue_sla: Ticket SLA
+    field_update_by_manager_date: Updated by manager
+    expiration_status_overdue: Overdue
+    expiration_status_replied: Replied
+    expiration_status_expires_in_x_time: Expires in %{value}
+    expiration_status_x_time_overdue: '%{value} overdue'
+    expiration_status_replied_in_x_time: Replied in %{value}
+    button_back_to_list: Back to Trackers
+    button_apply: Apply
+    label_responded_time_by: "Responded by %{author} %{age} ago"
+    label_responded_time: "Responded about %{value} ago"
+    lable_select_tracker: Select Tracker
+    label_sla_time:  Actual SLA
+    label_difference_time: Deviation Time
+    label_sla_history: History

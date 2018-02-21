@@ -1,0 +1,17 @@
+<%= error_messages_for @group %>
+
+<div class="box tabular">
+  <p><%= f.text_field :name, :required => true, :size => 60,
+           :disabled => !@group.safe_attribute?('name')  %></p>
+   <% if @group.id.present? %>
+   	<% rec = SyncEntity.where(:entity=>"groups",:entity_id=> @group.id).first%>
+   	<% status = rec.present? ? rec.can_sync : false%>
+   <% else %>
+   	<% status = false %>
+   <% end %>
+<p><%= f.check_box :add_user, :no_label => false, :checked => status  %></p>           
+
+  <% @group.custom_field_values.each do |value| %>
+    <p><%= custom_field_tag_with_label :group, value %></p>
+  <% end %>
+</div>

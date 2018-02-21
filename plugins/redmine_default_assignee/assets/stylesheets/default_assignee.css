@@ -1,0 +1,51 @@
+/*.assign_submit{*/
+    /*margin-top: 2% !important;*/
+    /*margin-left: 1% !important;*/
+/*}*/
+/*.assignee_select*/
+/*{*/
+    /*margin-left: -7% !important;*/
+    /*margin-top: 3% !important;*/
+/*}*/
+/*.assigneed_to_lable{*/
+    /*marginshivareddys-top: 1% !important;*/
+    /*margin-left: -13% !important;*/
+/*}*/
+/*#tracker_id {*/
+    /*margin-top: 2% !important;*/
+    /*margin-left: -6% !important;*/
+/*}*/
+/*.tracker_lable*/
+/*{*/
+    /*margin-top: 4% !important;*/
+    /*font-size: 12px !important;*/
+/*}*/
+/*#tab-content-default_assignee .tabular label {*/
+    /*font-weight: bold !important;*/
+    /*float: left !important;*/
+    /*text-align: right !important;*/
+    /*margin-left: -180px !important;*/
+    /*width: 273px !important;*/
+    /*margin-top: 1% !important;*/
+/*}*/
+
+#tracker_id {
+    margin: 0!important;
+}
+#assign_list{
+    float: left;
+    width: 100%;
+}
+.assignee_master form {
+    float: left;margin: 15px;}
+#assign_form{width: 100%;
+    float: left;}
+#user_assign_id{width:30%;}
+#assign_form label{margin-left: 10px;}
+.vertical-row {
+    Float:left;
+    height:573px;
+    width:1px; /* edit this if you want */
+    border-right: 2px solid #D0D2D8;
+    margin-left: 5%;
+}

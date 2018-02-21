@@ -1,0 +1,8 @@
+//alert("djfhsdjkfk");
+
+<% @users.each do |user| %>
+  $("#issue_watcher_user_ids_<%= user.id %>").remove();
+<% end %>
+$("#access_users_inputs").empty();
+$('#access_users_inputs').append('<%= escape_javascript(user_access_checkboxes(nil, @users, true)) %>');
+$('#access_users_update').show();

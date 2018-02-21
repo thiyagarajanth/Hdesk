@@ -1,0 +1,43 @@
+production:
+  adapter: mysql2
+  database: nanba_dev
+  host:  localhost
+  username: root
+  password: root
+  port: 3306
+  encoding: utf8
+
+development:
+  adapter: mysql2
+  database: nanba_dev
+  host:  localhost
+  username: root
+  password: root
+  port: 3306
+  encoding: utf8
+
+
+sync_prod:
+  adapter_sync: mysql2
+  database_sync: iniaOct
+  server_sync: localhost #192.168.0.179
+  host_sync: localhost #192.168.0.179
+  port_sync: 3306
+  username_sync: root
+  password_sync: root
+  encoding: utf8 
+
+hrms_user_sync:
+  adapter_hrms_sync: mysql2
+  database_hrms_sync: dgo_dev
+  server_hrms_sync: 192.168.8.241
+  host_hrms_sync: 192.168.8.241
+  port_hrms_sync: 3306
+  username_hrms_sync: hrmsuser
+  password_hrms_sync: hrmspass!23!
+  encoding: utf8
+
+env:
+  inia_url: 'https://nanba.objectfrontier.com'
+
+

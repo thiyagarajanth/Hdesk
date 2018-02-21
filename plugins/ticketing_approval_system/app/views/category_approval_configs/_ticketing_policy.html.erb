@@ -1,0 +1,231 @@
+<div id="errorExplanation" style="display: none;"></div>
+<div id="flash_notice" class='flash notice' style="display: none;"></div>
+
+
+
+<% status = params[:approval]%>
+<% need_approval = status=='true' ? '' : 'approval'%>
+<div style='width:100%;float:left'>
+<div style='width:50%;float:left'><h2 style="float:left">Ticketing Approval System</h2></div>
+ <div id='role_div' style='float:right'>Add Approval level</div>
+  <div id='role_div' style='float:right;margin-right: 12px;'><a onclick = "showModal('csv-import-options', '500px'); return false;" >Import Categories</a></div>
+</div>
+<div class="tk_ap_form">
+<div class="approval_role">
+  <div id='hide_role_div'>Hide</div>
+  <h2>Approval levels</h2>
+  <% path = params[:approval_id].present? ? {:url => project_approval_role_path(@project), :method => 'put'} : {:url => project_approval_roles_path(@project), :method => 'post'} %>
+  <%= form_for :project_approval_roles, path do |f| %>
+    <table class="tk_app_form_tbl ">
+        <thead>
+        <tr><th>Name <span class="required">*</span> </th><th>Level <span class="required">*</span> </th>
+          <th>Can Restrict? </th>
+          <th></th>
+          <th></th>
+        </tr>
+
+        </thead>
+        <tr>
+          <%if params[:approval_id].present?%>
+            <%= f.hidden_field :id, :value => params[:approval_id]%>
+          <%end%>
+          <td><%= f.text_field :name, :size => 22, :value => params[:name] rescue '' %> </td>
+          <td><%= f.number_field :level, :size => 22, :value => params[:level] rescue '' %> </td>
+          <td><%= f.check_box :can_restrict,:checked => 'true'==params[:restrict] %> </td>
+          <td><%= f.submit 'Submit'%></td>
+          <td><%=link_to 'Cancel', settings_project_path(params[:id], :tab => 'ticketing_approval_system'), :type => 'button' %></td>
+        </tr>
+
+        </tbody>
+      </table>
+
+  <%end%>
+  <table id="approval_list" border="1">
+  <thead>
+      <tr>
+        <th class="tk_app_cat"> Name </th>
+        <th class="tk_app_val" >level </th>
+        <th class="tk_app_val" >Restricted </th>
+        <th class="tk_app_act"> Actions </th>
+      </tr>
+  </thead>
+  <tbody>
+
+    <%approvals = ApprovalRole.where(:project_id => Project.find_by_identifier(params[:id]).id)%>
+      <%  approvals.each do |approval|%>
+          <tr>
+            <td><%= approval.name%></td>
+            <td><%= approval.level%></td>
+            <td><%= check_box_tag approval.can_restrict,'true', approval.can_restrict, :disabled =>  true %></td>
+            <td class="tk_app_act">
+              <%= link_to image_tag('edit.png'), edit_project_approval_role_path(@project, approval, :page => params[:page]),
+                          :title => l(:button_edit) %>
+              <%= link_to(image_tag('delete.png'), project_approval_role_path(@project, approval.id),
+                          :data => {:confirm => l(:text_are_you_sure)}, :method => :delete, :title => 'Delete')  %>
+            </td>
+          </tr>
+      <% end %>
+  </tbody>
+</table>
+</div>
+
+  <% path = params[:ticket_tag_id].present? ? {:url => project_approval_definition_path(@project), :method => 'put'} : {:url => project_approval_definitions_path(@project), :method => 'post'} %>
+  <%= form_for :category_approval_configs, path do |f| %>
+      <table class="tk_app_form_tbl">
+        <thead>
+        <tr><th>Category <span class="required">*</span> </th><th class=<%= need_approval%>>Values <span class="required">*</span> </th>
+           <%roles = ApprovalRole.where(:project_id => @project.id).order('level')%>
+           <th class=<%= need_approval%>>
+            Self
+           </th>
+          <% roles.each do |role|%>
+            <th class=<%= need_approval%>>
+              <%= role.name %>
+            </th>
+          <%end%>
+          <th class=<%= need_approval%>>
+            Max Validity
+          </th>
+          <th class=<%= need_approval%>>
+            Have Agreement
+          </th>
+        </tr>
+        </thead>
+        <tbody>
+        <%= render :partial => 'category_approval_configs/ticket_form', :locals => {:f => f, :isTemplate => false}%>
+        </tbody>
+      </table>
+
+  <%end%>
+</div>
+
+
+<% if @project.ticket_tags.empty? %>
+    <p class="nodata"><%= l(:label_no_data) %></p>
+<% else %>
+    <%= render :partial => 'category_approval_configs/list', :locals => {:entry => nil, :isTemplate => false}%>
+    <p class="pagination"><%#= pagination_links_full  %></p>
+<% end %>
+
+
+<div>
+
+</div>
+
+<div id="csv-import-options" style="display:none;">
+  <h3 class="title"><%= l(:label_import_options, :export_format => 'CSV') %></h3>
+
+
+  <h2><%=l(:label_category_importer)%></h2>
+
+  <div id="errorExplanationfile" style="color:red;">
+
+<ul>
+
+</ul>
+  </div>
+  <div id="successExplanationfile" style="color:green;">
+
+    <ul>
+
+    </ul>
+  </div>
+
+  <%= form_tag(import_categories_project_approval_definitions_path(project_id:@project.id,category_id: params[:category],tags:params[:search_tags]), :method => :post, :id => 'csv-import-form', multipart: true) do %>
+  <%#= @project.id %>
+      <%= hidden_field_tag 'project_id', @project.id %>
+      <%= hidden_field_tag 'category_id',params[:category] %>
+      <%= hidden_field_tag 'tags',params[:search_tags] %>
+
+      <%= file_field_tag :file %>
+      <br>
+      <br>
+      <button type="button" id="import_categories" value="Submit">Upload File</button>
+      <a href="" class="btn btn-primary btn-lg active" role="button">Cancel</a>
+      <!--<button type="button" id="import_categories" value="Submit">Cancel</button>-->
+      <%#= submit_tag "Import" %>
+  <% end %>
+
+
+  <!--<%#= form_tag(import_categories_project_approval_definitions_path(project_id:params["id"],category_id: params[:category],tags:params[:search_tags]), :method => :post, :id => 'csv-import-form') do %>-->
+
+  <!--<%#= form_tag(:url=>"#", :method => :post, :id => 'csv-import-form') do %>-->
+      <!--<%#= hidden_field_tag 'project_id', @project.id %>-->
+      <!--<%#= hidden_field_tag 'category_id',params[:category] %>-->
+      <!--<%#= hidden_field_tag 'tags',params[:search_tags] %>-->
+      <!--<%#= file_field_tag 'filetags', :size => 60 %>-->
+
+      <!--<p><label><%#@=l(:label_upload_notice)%></label><br/>-->
+        <%#= file_field_tag 'file', :size => 60%>
+      <!--<%#= file_field_tag :file %>-->
+      <!--<%#= submit_tag "Import" %>-->
+
+
+      <!--&lt;!&ndash;<button type="button" id="import_categories">Upload File</button>&ndash;&gt;-->
+      <!--<%#= submit_tag l(:button_upload) %>-->
+  <!--<%# end %>-->
+
+
+
+
+</div>
+
+<script>
+
+//    $('button[type!=submit]').click(function(event) { event.stopPropagation(); });
+
+
+    $("#import_categories").click(function(e) {
+
+
+        var file_data = $("#file").prop("files")[0];   // Getting the properties of file from file field
+        var form_data = new FormData();                  // Creating object of FormData class
+        form_data.append("file", file_data)              // Appending parameter named file with properties of file_field to form_data
+        var project_id = $("#project_id").val();
+        form_data.append("project_id", project_id)
+        var url = "/projects/"+project_id+"/approval_definitions/import_categories?"; // the script where you handle the form input.
+        var file_val =  $("#file").val();
+        $.ajax({
+            type: "POST",
+            url: url,
+
+            cache: false,
+            contentType: false,
+            processData: false,
+            data: form_data,
+//            data: {"project_id":project_id,"file_val":file_val}, // serializes the form's elements.
+            success: function(data)
+            {
+                console.log(data.errors);
+//                alert(data); // show response from the php script.
+
+                console.log(data.errors);
+                if(data.errors) {
+                    $('#errorExplanationfile').css("display", "block");
+                    $('#errorExplanationfile ul').empty();
+                    $('#errorExplanationfile ul').append(data.errors)
+                }
+                else
+                {
+                    $('#errorExplanationfile').css("display", "none");
+
+                    alert("Successfully Imported");
+                    location.reload();
+//                   $('#successExplanationfile').css("display", "block");
+//
+//                    $('#successExplanationfile ul').empty();
+//                    $('#successExplanationfile ul').append(data.errors)
+//                    if($("#TimeEntrypopupWindow #TimeEntrypopupWindowBody form.new_time_entry").length > 0)
+//                    {
+//                        $("#TimeEntrypopupWindow #TimeEntrypopupWindowBody form.new_time_entry").remove();
+//                        window.location.reload();
+//                    }
+                }
+            }
+        });
+
+        e.preventDefault(); // avoid to execute the actual submit of the form.
+    });
+
+
+</script>

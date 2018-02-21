@@ -1,0 +1,7 @@
+<%= error_messages_for 'category' %>
+
+<div class="box tabular">
+<p><%= f.label 'Name' %> <span class="required">*</span>   <%= f.text_field 'cat_name', :size => 30 %></p>
+<p><%= f.label 'Need Approval' %>  <%= f.check_box 'need_approval' %></p>
+<p><%= f.label 'Dashboard Visibility' %>   <%= f.select 'dashboard_visibility',options_for_select([['Yes',1],['No',0]],0),{} %></p>
+</div>

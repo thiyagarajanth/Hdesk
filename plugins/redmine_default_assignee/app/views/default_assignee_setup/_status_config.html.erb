@@ -1,0 +1,73 @@
+<div style='width:100%;float:left;'>
+  <div style='width:50%;float:left'><h2 style="float:left">Status Configuration</h2></div>
+</div>
+
+<%= form_tag(default_assignee_setup_status_config_path, {:method => :post,:multipart => true, remote: false,:id => 'assign_form'}) do %>
+    <%= hidden_field_tag 'project_id', @project.id %>
+    <div id="errorExplanation" style="display:none">
+      <ul>
+        <li>Tracker should not be empty</li>
+      </ul>
+    </div>
+    <%= label_tag 'Trackers '%>
+    <%= select_tag "tracker_ids", options_from_collection_for_select(@project.trackers, "id", "name", params[:tracker_id]), :prompt => '--- Please Select ---' %>
+    <%= submit_tag l(:button_submit),:class => "assignee_submit",:onclick => "return check_tracker_selected();" %></br>
+    <span id="tracker_data" data-tracker_id = <%= @project_tracker_id %>></span>
+
+    <%# status = IssueStatus.all %> </br>
+    <div>
+        <table class="list" style="width:60%;margin-left: 5%;">
+            <tr>
+              <th><%= l(:label_status)%></th>
+              <th><%= l(:label_assignee)%></th>
+              <th>Display Overview</th>
+            </tr>
+            <% @status.each do |status| %>
+              <tr class="<%= cycle('odd', 'even') %>">
+                  <td style="text-align:left;"><%=status.name%></td>
+                  <%= hidden_field_tag 'status_id[]',status.id %>
+                  <% selected = DefaultAssigneeSetup.find_by_project_id_and_tracker_id_and_status_id(@project.id,@project_tracker_id,status.id) %>
+                <% overview =   selected.display_in_overview rescue false %>
+                <% selected_value = selected.present? ? selected.assignee : "no-change" %>
+                  <td><%= select_tag "assignee[]",options_for_select(DefaultAssigneeSetup.assignee_values,selected_value)%></td>
+                  <td><%#= check_box_tag 'display_overview', true , {:checked => true}    %>
+                    <%= check_box_tag "display_overview[]", status.name, overview%>
+                  </td>
+              </tr>
+            <% end %>
+        </table>
+    </div></br>
+
+<% end %>
+
+
+
+<script>
+
+  function check_tracker_selected(){
+      tracker_id = $(':selected','#tracker_ids').val()
+      if (tracker_id == "") {
+        $('#errorExplanation').show();
+          return false;
+      }
+      else{
+          return true;
+      }
+  };
+
+  $(document).on("change","#tracker_ids",function(e){
+     var tracker =  $(':selected','#tracker_ids').val()
+     if (tracker != ""){
+         $('#errorExplanation').hide();
+     }
+  });
+
+  setTimeout(function(){
+      tracker_id = $('#tracker_data').attr('data-tracker_id')
+    $('#tracker_ids').val(tracker_id);
+  },100);
+</script>
+
+
+
+

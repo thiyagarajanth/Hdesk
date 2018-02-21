@@ -1,0 +1,256 @@
+
+<% roles = @roles %>
+
+<tbody>
+    <% manager_role_id = Role.where(:name=>'Manager').first.id %>
+    <% @manager_id = @members_data.collect{|member| member.user.id if member.member_roles.present? && member.member_roles.first.id == manager_role_id }.compact %>
+    <% @members.each do |member| %>
+        <% next if (member.new_record? )  %>
+            <tr id="member-<%= member.id %>" class="<%= cycle 'odd', 'even' %> member">
+                <td class="name <%= member.principal.class.name.downcase %>"><%= link_to_user member.principal %></td>
+
+                <td class="roles">
+
+                  <span id="member-<%= member.id %>-unlock"><%= member.roles.sort.collect(&:to_s).join(', ') %></span>
+                <% if  !member.deletable?%>
+                  <%= form_for(member,
+                             {:as => :membership, :remote => true,
+                              :url => wktime_unlock_users_path,
+                              :method => :put,
+                              :html => { :id => "member-#{member.id}-unlock-form", :class => 'hol' }}
+                    ) do |f| %>
+                    <p>
+                      <span id="unlock_error_<%= member.id %>" style="color:red;display:block;">Please enter comment.</span>
+                      <%= text_area_tag 'comment' %>
+                      <%= hidden_field_tag 'user_id', member.user_id %>
+                      <%= hidden_field_tag 'manager_id', @manager_id %>
+                      <%= hidden_field_tag 'permission', 'true' %>
+                    </p>
+                    <p>
+                      <%= link_to_function(l(:button_save),"validate_unlock_comment(#{member.id})") %>
+                      <%= link_to_function(l(:button_cancel),
+                                           "$('#member-#{member.id}-unlock-form').hide();$('#unlock_error_#{member.id}').hide();$('#member-#{member.id}-unlock').show();$('#member-#{member.id}-unlock-form #comment').attr('value', ''); return false;") %>
+                    </p>
+                <% end %>
+    <% end %>
+                <td class="roles">
+                    <%= form_for(member,
+                               {:as => :membership, :remote => true,
+                                :url => membership_path(member),
+                                :method => :put,
+                                :html => { :id => "member-#{member.id}-roles-form", :class => 'hol' }}
+                    ) do |f| %>
+                        <p>
+                            <% roles.each do |role| %>
+                                <label>
+                                <%= check_box_tag('membership[role_ids][]',
+                                                role.id, member.roles.include?(role),
+                                                :id => nil,
+                                                :disabled => member.member_roles.detect {
+                                                        |mr| mr.role_id == role.id && !mr.inherited_from.nil?
+                                                } ) %> <%= role %>
+                                </label><br />
+                            <% end %>
+                        </p>
+                        <%= hidden_field_tag 'membership[role_ids][]', '' %>
+                        <p>
+                            <%= submit_tag l(:button_save), :class => "small" %>
+
+                            <%= link_to_function(l(:button_cancel),
+                                             "$('#member-#{member.id}-roles').show(); $('#member-#{member.id}-roles-form').hide(); return false;") %>
+
+                        </p>
+                    <% end %>
+                </td>
+                <%= call_hook(:view_projects_settings_members_table_row, { :project => @project, :member => member}) %>
+                <td class="buttons">
+                    <% user_unlock_status = UserUnlockEntry.user_lock_status(member.user_id)  %>
+                    <% user_lock_status = UserUnlockEntry.lock_status(member.user_id)  %>
+                    <% if user_unlock_status == true %>
+                      <%= link_to_function l(:button_unlock),
+                                           "$('#member-#{member.id}-unlock').hide(); $('#member-#{member.id}-unlock-form').show();$('#member-#{member.id}-unlock-form #comment').attr('value', '');$('#unlock_error_#{member.id}').hide(); return false;",
+                                           :class => "icon icon-unlock icon-unlock-#{member.user_id} btn" %>
+                      <%= link_to_function l(:button_lock),
+                                           "lock_user(#{member.user_id});return false;",
+                                           :class => "icon icon-lock icon-lock-#{member.user_id} btn",:style=>"display:none;" %>
+                    <% elsif user_lock_status == true %>
+                        <%= link_to_function l(:button_lock),
+                                           "lock_user(#{member.user_id});return false;",
+                                           :class => "icon icon-lock icon-lock-#{member.user_id} btn" %>
+                        <%= link_to_function l(:button_unlock),
+                                           "$('#member-#{member.id}-unlock').hide(); $('#member-#{member.id}-unlock-form').show();$('#member-#{member.id}-unlock-form #comment').attr('value', '');$('#unlock_error_#{member.id}').hide(); return false;",
+                                           :class => "icon icon-unlock icon-unlock-#{member.user_id} btn",:style=>"display:none;" %>
+
+                    <%end%>
+                    <%= link_to_function l(:button_edit),
+                                       "$('#member-#{member.id}-roles').hide(); $('#member-#{member.id}-roles-form').show(); return false;",
+                                       :class => 'icon icon-edit' %>
+                    <%= delete_link membership_path(member),
+                                  :remote => true,
+                                  :data => (!User.current.admin? && member.include?(User.current) ? {:confirm => l(:text_own_membership_delete_confirmation)} : {}) if member.deletable? %>
+                    <%= call_hook(:view_projects_settings_members_buttons, { :project => @project, :member => member}) %>
+                </td>
+
+            </tr>
+        <% end; reset_cycle %>
+
+</tbody>
+
+
+<style>
+.nodatas {
+    text-align: center;
+    margin-right: -537px;
+    padding: 4px 4px 4px 30px;
+    margin-bottom: 8px;
+    font-size: 1.1em;
+
+}
+</style>
+
+<script>
+
+$("form.hol").hide();
+
+$(document).ready(function(){
+
+    var txtEntryDate;
+    if(document.getElementById('divError') != null){
+        if(document.getElementById('time_entry_spent_on')!=null){
+            txtEntryDate = document.getElementById('time_entry_spent_on');
+        }
+        else{
+            //get current date
+            var today = new Date();
+            today = today.getFullYear() + '-' + (today.getMonth()+1) + '-' + today.getDate();
+            showEntryWarning(today);
+        }
+    }
+    if(txtEntryDate!=null){
+        showEntryWarning(txtEntryDate.value);
+        txtEntryDate.onchange=function(){showEntryWarning(this.value)};
+    }
+
+    function showEntryWarning(entrydate){
+        var $this = $(this);
+        var divID =document.getElementById('divError');
+        var statusUrl = document.getElementById('getstatus_url').value;
+        statusUrl = statusUrl.replace(/^http:/, 'https:');
+        divID.style.display ='none';
+        $.ajax({
+            url: statusUrl,
+            type: 'get',
+            data: {startDate: entrydate},
+            success: function(data){ showMessage(data,divID); },
+            complete: function(){ $this.removeClass('ajax-loading'); }
+        });
+    }
+
+    function showMessage(data,divID){
+        if(data!=null && ('s'== data || 'a'== data)){
+            divID.style.display = 'block';
+        }
+        else{
+            divID.style.display ='none';
+        }
+    }
+
+
+
+    function validate_unlock_comment(member)
+    {
+        var comment_id = "#member-"+member+"-unlock-form"+" "+"#comment"
+        var form_id = "#member-"+member+"-unlock-form"
+        var error = "#member-"+member+"-unlock-form"+" "+"#unlock_error_"+member
+        var role = "#member-"+member+"-unlock"
+        if ($.trim($(comment_id).val()).length > 0)
+        {
+            $(error).hide();
+            $(form_id).submit();
+            $(role).show();
+        }
+        else
+        {
+            $(error).show();
+        }
+
+    }
+
+    function lock_user(member)
+    {
+        $.ajax({url:"/wktime/lock_users?user_id="+member,success:function(result){
+            lock_icon =  ".icon-lock-"+member
+            unlock_icon =  ".icon-unlock-"+member
+            $(lock_icon).hide();
+            $(unlock_icon).show();
+
+
+        }});
+
+    }
+
+    function unlock_permanent(member)
+    {
+
+        var row_id =  ".restrict_row_"+member
+        var comment_id =  ".restrict_row_"+member+" "+"#comment"
+        //var comment_id =  "#restrict_comment_"+member
+        var row_comment = ".restrict_row_"+member+" "+"#restrict_comment_"+member
+        var comment_val = $(row_comment).val();
+        var unlock_icon = ".icon-unlock-" + member
+        if ($(unlock_icon).css("display") == "inline") {
+            if ($.trim($(comment_id).val()).length > 0) {
+                $.ajax({url: "/wktime/unlock_permanent?user_id=" + member+"&comments="+$(comment_id).val(), success: function (result) {
+                    var lock_icon = ".icon-lock-" + member
+                    unlock_icon = ".icon-unlock-" + member
+                    console.log($(this).text())
+                    if ($(unlock_icon).css("display") == "inline") {
+                        $(unlock_icon).hide();
+                        $(lock_icon).show();
+                        $(comment_id).val('')
+                        $(row_id).hide();
+                    } else {
+                        $(lock_icon).hide();
+                        $(unlock_icon).show();
+                    }
+                }
+                });
+            }
+            else {
+
+                $(row_id).show();
+            }
+
+        }
+        else
+            {
+            $.ajax({url: "/wktime/unlock_permanent?user_id=" + member, success: function (result) {
+                var lock_icon = ".icon-lock-" + member
+                var unlock_icon = ".icon-unlock-" + member
+                console.log($(this).text())
+                if ($(unlock_icon).css("display") == "inline") {
+                    $(unlock_icon).hide();
+                    $(lock_icon).show();
+                } else {
+                    $(lock_icon).hide();
+                    $(unlock_icon).show();
+                }
+                }
+            });
+            }
+
+        }
+    function unlock_permanent_cancel(member) {
+      console.log('sssss');
+        var row_id =  ".restrict_row_"+member
+        $(row_id).hide();
+        var comment_id =  ".restrict_row_"+member+" "+"#comment"
+        $(comment_id).val("");
+    }
+
+
+
+});
+
+</script>
+

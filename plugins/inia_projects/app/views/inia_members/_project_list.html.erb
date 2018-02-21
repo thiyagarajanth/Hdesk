@@ -1,0 +1,21 @@
+
+
+<% content_for :header_tags do %>
+    <%= auto_discovery_link_tag(:atom, {:action => 'index', :format => 'atom', :key => User.current.rss_key}) %>
+<% end %>
+
+
+<h2><legend>iNia Projects</legend></h2>
+
+
+
+<div id="projects-index" class="inia_projects">
+  <ul class="projects root">
+    <% @projects.each do |project|%>
+        <li class="root"><div class="root"><a href="/inia_members/<%=project.id%>" class="project root leaf my-project"><%= project.name%></a><div class="wiki description"><p><%= project.description%></p></div></div></li>
+    <% end %>
+  </ul>
+</div>
+
+
+<% html_title(l(:label_project_plural)) -%>

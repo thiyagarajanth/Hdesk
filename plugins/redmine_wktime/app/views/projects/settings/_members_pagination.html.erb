@@ -1,0 +1,19 @@
+<%= javascript_include_tag 'members_datatable.js', :plugin => "redmine_wktime" %>
+
+<p class="pagination">
+	<%= hidden_field_tag "current_page_no", params[:page] %>
+    <%= pagination_links_fill @member_pages1, @member_count1 %>
+</p>
+
+<script>
+
+$(document).ready(function(){
+	$( "p.pagination a" ).each(function( index ) {
+    $(this).attr("href","#")
+	});
+});
+
+</script>
+
+    
+   

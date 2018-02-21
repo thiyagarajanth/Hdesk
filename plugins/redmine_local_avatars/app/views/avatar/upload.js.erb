@@ -1,0 +1,21 @@
+<%= '<textarea>'.html_safe unless request.xhr? -%>
+
+<% if @attachment.new_record? -%>
+
+  $('<%= j params[:uploader] %>').uploader('errorAfterUpload', {
+    message: '<%= j @attachment.errors.full_messages.join(", ") %>'
+  });
+
+<% else -%>
+
+  $('<%= j params[:uploader] %>').uploader('successAfterUpload', {
+    attachmentId: '<%= j params[:attachment_id] %>',
+    token: '<%= j @attachment.token %>',
+    deletePath: '<%= j attachment_path(@attachment, :attachment_id => params[:attachment_id], :format => "js") %>',
+    attachmentPath: '<%= j download_named_attachment_path(@attachment, @attachment.filename) %>',
+    contentType: '<%= j @attachment.content_type %>'
+  });
+
+<% end -%>
+
+<%= '</textarea>'.html_safe unless request.xhr? %>

@@ -1,0 +1,6 @@
+<%#= raise params.inspect%>
+<% if !params[:id].present?%>
+    <%= render :partial => 'inia_members/project_list' %>
+<% else %>
+    <%= render :partial => 'inia_members/members_list' %>
+<% end %>

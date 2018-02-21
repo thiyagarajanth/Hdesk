@@ -1,0 +1,15 @@
+<h3>
+  <% helper = Object.new.extend(DashboardHelper) %>
+  <%= link_to "Tickets WaitingForApproval",issues_path( :set_filter=>"1", :f=>["status_id", "assigned_to_id", ""], :op=>{:status_id=>"=", :assigned_to_id=>"="}, :v=>{:status_id=>helper.get_approval_statuses, :assigned_to_id=>["me"]}, :c=>["project", "subject", "author", "assigned_to", "priority", "status", "created_on", "updated_on"], :group_by=>"") %>
+  (<%= Issue.visible.where(:assigned_to_id => User.current.id,:status_id => helper.get_approval_statuses).count %>)
+</h3>
+
+<% reported_issues = issueswaitingforapproval %>
+<%= render :partial => 'issues/ticketslist', :locals => { :issues => reported_issues } %>
+
+<% content_for :header_tags do %>
+<%= auto_discovery_link_tag(:atom,
+                            {:controller => 'issues', :action => 'index', :set_filter => 1,
+                             :author_id => 'me', :format => 'atom', :key => User.current.rss_key},
+                            {:title => l(:label_reported_issues)}) %>
+<% end %>

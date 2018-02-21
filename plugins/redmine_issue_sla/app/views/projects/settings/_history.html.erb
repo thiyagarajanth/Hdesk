@@ -1,0 +1,94 @@
+
+<div style="width:100%;float: left">
+  <h3 style="margin: 0 auto; width: 50%; padding: 10px;">SLA Config History</h3>
+<% rec = AuditConfig.find_by_sql("SELECT group_concat(id) as ids, created_by as user_id, created_at FROM audit_configs where project_id=#{@project.id} group by created_by,created_at order by id desc") %>
+<div style="width:50%;max-height: 300px;overflow:scroll;padding: 10px; margin: 0 auto; border: 1px solid;">
+<% rec.each do |x| %>
+    <div style="width:100%;float: left">
+      <div style="width:10%;float: left">
+        <% user = User.find(x.user_id); %>
+        <%= avatar(user, :size => "40").to_s.html_safe  %>
+      </div>
+      <div style="width:90%;float: left">
+        <span class="userAudit" > <%=  (user ? link_to_user(user) : "-") + ' Updated on ' +  (content_tag 'span', x.created_at.in_time_zone("Mumbai").strftime("%d-%b-%Y %I:%M%p"), :style => 'font-weight:bold')  %></span>
+        <% x.ids.split(',').each do |id| %>
+            <% audit = AuditConfig.find(id) %>
+            <% values = JSON.parse(audit.modified_value) %>
+            <% values.each do |z|%>
+              <span style="width:100%;float: left">
+                <% from_value = z[1][0].to_s.present? ? z[1][0].to_s : '0' %>
+                <% to_value = z[1][1].to_s.present? ? z[1][1].to_s : '0' %>
+<%  p 'old================='
+    p [audit.old_value ,(IssueStatus.find(audit.old_value[3]||audit.new_value[3]) rescue nil)]%>
+                <%= case audit.table_name
+
+                     when 'issue_slas'
+                       # al = IssueSla.find(audit.entity_id) rescue nil
+                       if audit.entity_type=='delete'
+                         (content_tag 'span', z[0] , :style => 'font-weight:bold') + " priority was " + (content_tag 'span', 'Removed' , :style => 'font-weight:bold')
+                       elsif audit.entity_type=='create'
+                         (content_tag 'span', audit.my_titleize(z[0]), :style => 'font-weight:bold') + " priority SLA time set to " + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                       elsif audit.entity_type=='update'
+                         (content_tag 'span', audit.my_titleize(z[0]), :style => 'font-weight:bold') + " priority changed from  " + (content_tag 'span', from_value, :style => 'font-weight:bold') + ' to ' + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                       end
+                     when 'approver_slas'
+                       al = ApproverSla.find(audit.entity_id) rescue nil
+                       if audit.entity_type=='create'
+                         (content_tag 'span', al.issue_priority.name , :style => 'font-weight:bold')+ " Approver "+ (content_tag 'span', al.approval_role.name , :style => 'font-weight:bold') +" SLA time set to " + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                       elsif audit.entity_type=='update'
+                         (content_tag 'span', al.issue_priority.name , :style => 'font-weight:bold') + " Approver "+ (content_tag 'span', al.approval_role.name , :style => 'font-weight:bold') +" SLA time changed from  " + (content_tag 'span', from_value, :style => 'font-weight:bold') + ' to ' + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                       end if al
+                     when 'issue_sla_statuses'
+                       al = IssueStatus.find(audit.old_value[3]||audit.new_value[3]) rescue nil
+                       txt = 'sla_timer' == z[0] ? ' status SLA timer' : ' status Approver SLA'
+                       if audit.entity_type=='delete'
+                         (content_tag 'span', z[0] , :style => 'font-weight:bold') + " status was " + (content_tag 'span', 'Removed' , :style => 'font-weight:bold')
+                       elsif audit.entity_type=='create'
+                         (content_tag 'span', al.name , :style => 'font-weight:bold') + "#{txt} set to " + (content_tag 'span', audit.get_status_value(to_value), :style => 'font-weight:bold')
+                       elsif audit.entity_type=='update'
+                         (content_tag 'span', al.name , :style => 'font-weight:bold')  + " #{txt} Changed from " + (content_tag 'span', audit.get_status_value(from_value), :style => 'font-weight:bold') + ' to ' + (content_tag 'span', audit.get_status_value(to_value), :style => 'font-weight:bold')
+                       end if al || audit.entity_type=='delete'
+                     when 'sla_working_days'
+                       if audit.entity_type=='create'
+                         if !audit.week_days(z[0])
+                           (content_tag 'span', audit.my_titleize(z[0]) , :style => 'font-weight:bold')  + " set to " + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                         else
+                           (content_tag 'span', audit.week_days(z[0]) , :style => 'font-weight:bold')  + " set to " + (content_tag 'span',( to_value=='true' ? 'Working day' : 'Not working day'), :style => 'font-weight:bold')
+                         end
+                       elsif audit.entity_type=='update'
+                         if !audit.week_days(z[0])
+                           (content_tag 'span', audit.my_titleize(z[0]) , :style => 'font-weight:bold')  + ' changed from ' + (content_tag 'span', from_value, :style => 'font-weight:bold') + ' to ' + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                         else
+                           (content_tag 'span', audit.week_days(z[0]) , :style => 'font-weight:bold')  + ' changed from ' + (content_tag 'span', ( from_value=='true' ? 'Working day' : 'Not working day'), :style => 'font-weight:bold') + ' to ' + (content_tag 'span', ( to_value=='true' ? 'Working day' : 'Not working day'), :style => 'font-weight:bold')
+                         end
+                       end if from_value != to_value
+                     when 'response_slas'
+                       if from_value != to_value
+                         if from_value.present?
+                           (content_tag 'span', audit.my_titleize(z[0]) , :style => 'font-weight:bold')  + ' changed from ' + (content_tag 'span', from_value, :style => 'font-weight:bold') + ' to ' + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                         else
+                           (content_tag 'span', audit.my_titleize(z[0]) , :style => 'font-weight:bold')  + " set to " + (content_tag 'span', to_value, :style => 'font-weight:bold')
+                         end
+                       end
+                   end rescue ''
+                %>
+              </span>
+            <% end %>
+
+        <% end %>
+      </div>
+    </div>
+      <hr>
+<% end %>
+</div>
+</div>
+
+<style>
+    .userAudit{
+        font-size: 13px;
+        padding: 0 0 6px 0;
+        font-weight: bold;
+        width:100%;
+        float: left;
+    }
+</style>

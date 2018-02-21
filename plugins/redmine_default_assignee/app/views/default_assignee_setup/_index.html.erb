@@ -1,0 +1,162 @@
+<%= stylesheet_link_tag 'default_assignee', :plugin => "redmine_default_assignee" %>
+<% if @default_assignee.present? && @default_assignee.errors.any? %>
+    <div id="errorExplanation">
+     <ul>
+        <% @default_assignee.errors.each_with_index do |msg, i| %>
+            <li><%= msg[1] %></li>
+        <% end %>
+      </ul>
+    </div>
+<% end %>
+
+<div class="splitcontentleft" style="width:45%;float:left;">
+    <div style='width:100%;float:left'>
+      <div style='width:100%;float:left'><h2 style="float:left">Set Default Assignee</h2></div>
+    </div>
+
+    <div id="error" style="display:none;float:left;width:100%">
+        <ul>
+          <li>Assignee should not be empty</li>
+        </ul>
+    </div>
+
+    <%= form_tag(project_default_assignee_setup_index_path(@project.id), {:method => :post,:multipart => true, :id => 'assign_form'}) do %>
+        <%= hidden_field_tag 'project_id', @project.id %>
+        <%= label_tag 'Tracker '%>
+        <%= select_tag "tracker_id", options_from_collection_for_select(@project.trackers, "id", "name", params[:tracker_id]), :prompt => '--- Please Select ---' %>
+
+            <%= label_tag 'Assignee'%>
+          <% user = params[:assigneed_to_id].present? ? Principal.find(params[:assigneed_to_id]) : nil%>
+          <% attr = user.present? ? "#{user.id}, #{user.name}" : ''%>
+        <%= select_tag :assigneed_to_id,nil, {id: 'user_assign_id', "data-ids"=>attr} %>
+        <%#= select_tag "assigneed_to_id",options_from_collection_for_select(@project.assignable_users, "id", "name", params[:assigneed_to_id]), :prompt => '--- Please Select ---'%>
+          <span id="tracker_datas" data-tracker_id = <%= @project_tracker_id %>></span>
+        <%= submit_tag l(:button_submit),:class=>"assign_submit",:onclick => "return check_assignee_selected();" %>
+    <% end %>
+
+    <div style="width:100%;float:left;">
+        <div id="assign_list" style="width:100%;float:left;">
+            <h3 style="margin-left:2%;">List</h3>
+            <table class="list" style="width: 60%;margin-left: 5%;">
+              <tr>
+                <th><%= l(:lable_field_tracker) %></th>
+                <th><%= l(:lable_field_default_assignee) %></th>
+                <th>Action</th>
+              </tr>
+              <% %>
+
+              <% @default_assignees.each do |default_assignee| -%>
+                  <% if default_assignee.default_assignee_to.present? %>
+                      <tr class="<%= cycle('odd', 'even') %>">
+                        <td>
+                          <%= default_assignee.tracker.name %>
+                        </td>
+                        <td>
+                            <%principal = default_assignee.assigned_princepal%>
+                            <% if principal.present? && principal.firstname.present? %>
+                                <%= principal.firstname  %>
+                            <% elsif principal.present? && principal.lastname.present? %>
+                                <%= principal.lastname%>
+                            <%end%>
+                        </td>
+                        <% assignee = default_assignee.default_assignee_to.inspect%>
+                        <td>
+                          <%= link_to image_tag('edit.png'), edit_project_default_assignee_setup_path(@project, default_assignee.id),  :title => l(:button_edit) %>
+                          <%= link_to(image_tag('delete.png'), project_default_assignee_setup_path(@project, assignee), :data => {:confirm => l(:text_are_you_sure)}, :method => :delete, :title => 'Delete')  %>
+                        </td>
+                      </tr>
+                  <% end %>
+              <% end %>
+            </table>
+
+        </div>
+    </div>
+</div>
+<% if @project.enabled_modules.map(&:name).include?('status_assignee') %>
+    <div class="vertical-row" ></div>
+    <div class="splitcontentright" style="width:45%;margin-left: -10%;">
+        <%= render :partial => 'default_assignee_setup/status_config'%>
+    </div>
+<% end %>
+<%= javascript_tag defer: 'defer' do -%>
+    $(document).ready(function(){
+      res =  $('#user_assign_id').attr('data-ids').split(',')
+        if (res.length > 1){
+            $('#user_assign_id').append($('<option>', {value: res[0], text: res[1] }));
+              $.ajax({
+              type: "get",
+              url: '/projects/' + window.location.href.split('/')[4] + '/default_assignee_setup/',
+              dataType: 'json',
+              type: "GET",
+              success: function(data) {
+              var $el = $("#user_assign_id");
+                $.each(data.result, function(key,val) {
+                $el.append($("<option></option>").attr("value", val[0]).text(val[1]));
+                });
+                }
+                });
+        }
+
+        $(document).on("change", '#tracker_id', function(e) {
+
+            var department = $(this).val();
+            $.ajax({
+              type: "get",
+              url: '/projects/' + window.location.href.split('/')[4] + '/default_assignee_setup/',
+              dataType: 'json',
+              type: "GET",
+              success: function(data) {
+                var $el = $("#user_assign_id");
+                $el.empty(); // remove old options
+                $el.append($("<option></option>").attr("value", '').text('Please Select'));
+                $.each(data.result, function(key,val) {
+                 $el.append($("<option></option>").attr("value", val[0]).text(val[1]));
+                });
+              }
+            });
+        });
+    });
+
+<% end -%>
+
+<script>
+    function check_assignee_selected(){
+        assignee = $(':selected','#user_assign_id').val()
+        if (assignee.length == 0) {
+            $('#error').show();
+            return false;
+        }
+        else{
+            return true;
+        }
+    };
+
+    setTimeout(function(){
+        tracker_id = $('#tracker_datas').attr('data-tracker_id')
+        $('#tracker_id').val(tracker_id);
+
+        var department = $('#tracker_id').val();
+        $.ajax({
+            type: "get",
+            url: '/projects/' + window.location.href.split('/')[4] + '/default_assignee_setup/',
+            dataType: 'json',
+            type: "GET",
+            success: function(data) {
+                var $el = $("#user_assign_id");
+                $el.empty(); // remove old options
+                $el.append($("<option></option>").attr("value", '').text('Please Select'));
+                $.each(data.result, function(key,val) {
+                    $el.append($("<option></option>").attr("value", val[0]).text(val[1]));
+                });
+            }
+        });
+    },100);
+
+    $(document).on("change","#user_assign_id",function(e){
+        var assignee =  $(':selected','#user_assign_id').val()
+        if (assignee.length > 0){
+            $('#error').hide();
+        }
+    });
+</script>
+

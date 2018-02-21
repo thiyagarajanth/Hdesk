@@ -1,0 +1,23 @@
+<% category_appr_config_helper = Object.new.extend(CategoryApprovalConfigsHelper) %>
+<%= "#{issue.tracker.name} ##{issue.id}: #{issue.subject}" %>
+<%= issue_url %>
+
+<%= render_email_issue_attributes(issue, users.first) %>
+	<ul>
+		<li>Access For:
+			<% @issue.access_users.each_with_index do |each_user,index| %>
+        		<%= category_appr_config_helper.get_user_firstname_lastname(each_user) +(index.to_i == -1 ? " " : ",")  %>
+    		<% end %>
+     	</li>
+	</ul>
+----------------------------------------
+<%= issue.description %>
+
+
+
+<% if issue.attachments.any? -%>
+---<%= l(:label_attachment_plural).ljust(37, '-') %>
+<% issue.attachments.each do |attachment| -%>
+<%= attachment.filename %> (<%= number_to_human_size(attachment.filesize) %>)
+<% end -%>
+<% end -%>

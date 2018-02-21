@@ -1,0 +1,79 @@
+<%= form_tag({ :controller => 'infos', :action => 'index' },
+             :method => :get) do %>
+
+<div class="box tabular settings" id="info">
+	<div id='head'>
+		<% if User.current.admin.present? %>
+			<button type="button" id='edit'>Edit</button></br>
+		<% end %>
+	</div>
+
+	<%= field_set_tag 'Tool Owner' ,class:'admin' do %>
+      <%= hidden_field_tag :id, (@info.id rescue nil)%>
+		<span>Name:<%= text_field_tag 'name',(@info.name rescue nil), :size => 30 %></span>
+		<span id="txt1"></span>
+		<span id='email'>Mail:<%= text_field_tag 'mail',(@info.email rescue nil), :size => 30 %></span>
+		<span id="txt2"></span>
+	<% end %>
+	
+	
+	<%= field_set_tag 'Info', class:'information' do %>
+		<%= text_area_tag 'description',(@info.description rescue nil), :cols => 60, :rows => 5, :class => 'wiki-edit' %>
+	 <span id="txt"></span>
+	<% end %>
+
+  <%= field_set_tag 'Notification Message', class:'information' do %>
+      <%= text_area_tag 'message',(@info.notify rescue nil), :cols => 60, :rows => 5, :class => 'wiki-edit' %>
+      <span id="txt3"></span>
+  <% end %>
+
+	 <div id='foot'>
+		<% if User.current.admin.present? %>
+			<%= submit_tag l(:button_save) %>
+		<% end%>
+	</div>
+</div>
+<% end %>
+
+<script>
+
+
+	$('#txt1').html($("#name").val());
+	$("#name").toggle();
+	$('#txt2').html($("#mail").val());
+	$("#mail").toggle();
+    $('#txt').html($("#description").val());
+ 	$("#description").toggle();
+    $('#txt3').html($("#message").val());
+    $("#message").toggle();
+	$('#edit').click(function () {
+        $("#message").toggle();
+        $('#txt3').html($("#message").val());
+        $('#txt3').toggle();
+
+        $("#description").toggle();
+         $("#txt").html($("#description").val());
+         $('#txt').toggle();
+         $("#description").val();
+         $("#name").toggle();
+         $('#txt1').html($("#name").val());
+         $('#txt1').toggle();
+         $("#mail").toggle();
+         $('#txt2').html($("#mail").val());
+         $('#txt2').toggle();
+
+	
+});
+
+</script>
+
+<style>
+
+#email{margin-left: 230px;}
+.admin{padding:30px;}
+#info{padding:45px;}
+.information{padding: 30px;}
+#edit{margin-left: 1133px;margin-bottom: 10px;}
+#foot{margin-top: 23px;margin-bottom: -18px;}
+
+</style>

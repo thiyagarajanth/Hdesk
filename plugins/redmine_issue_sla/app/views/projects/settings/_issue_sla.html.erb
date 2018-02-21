@@ -1,0 +1,273 @@
+<%= stylesheet_link_tag 'sla', :plugin => "redmine_issue_sla" %>
+<%= javascript_include_tag 'sla', :plugin => "redmine_issue_sla" %>
+<%= stylesheet_link_tag 'timepicker', :plugin => "redmine_issue_sla" %>
+<%= javascript_include_tag 'timepicker', :plugin => "redmine_issue_sla" %>
+<div class="auto_close_msg" style="display:none">
+<div id="errorExplanation">
+  <ul>
+    <li>Auto close should be greater than Ticket closing.</li>
+    <li class="mandatory_auto_close" style="display:none">Auto close is mandatory.</li>
+  </ul>
+</div>
+</div>
+<fieldset>
+<% @tracker=Tracker.find(params[:tracker_id]) rescue nil%>
+<% if @tracker.present? %>
+    <div class="tracker" >
+      <span>Tracker: <%= @tracker.name %></span>
+      <span><%= link_to_function(l(:button_back_to_list),"send_tracker_back('#{params[:id]}','#{params[:tab]}')",:id=>"back_to_trackes") %></span>
+    </div>
+    <fieldset><legend align="center">Ticket SLA</legend>
+
+      <%= form_tag({:controller => :issue_slas, :action => :update, :project_id => @project}, :method => :put, :class => "tabular",:multipart => true,:id=>"update_params") do %>
+          <%= stylesheet_link_tag 'sla', :plugin => "redmine_issue_sla" %>
+          <%= javascript_include_tag 'sla', :plugin => "redmine_issue_sla" %>
+          <%= hidden_field_tag 'tracker_id',@tracker.id %>
+          <div style="width:100%;">
+            <div class="tr_priority" >
+              <h3>Priority</h3>
+              <div class="select_all" style="float: left">
+                <span><input type="checkbox" id="selectall"/> Select All</span>
+              </div>
+
+              <table class="list priority_list ">
+                <thead ><tr>
+                  <th class="add_width">Apply</th>
+                  <th class="add_width_status"><%= l(:field_priority) %></th>
+                  <th class="add_width_sla"><%= l(:field_allowed_delay) %></th>
+                </tr></thead>
+                <tbody class="list_scrol">
+                <% IssuePriority.active.all.each do |issue_sla| -%>
+                    <tr class="<%= cycle('odd', 'even') %>">
+                      <% issue_slas=IssueSla.where(:project_id=>@project.id,:tracker_id=>@tracker.id) %>
+                      <td class="add_width"><%= check_box_tag "priority_ids[]", issue_sla.id, issue_slas.map(&:priority_id).include?(issue_sla.id),:class=>"checkbox1" %></td>
+                      <td class="add_width_status add_padding">
+                        <%= h(issue_sla.name) %>
+                      </td>
+                      <td class="add_width_sla add_padding">
+                        <%if issue_slas.map(&:priority_id).include? issue_sla.id %>
+                            <% priority = IssueSla.where(:project_id => @project.id, :tracker_id => @tracker.id)%>
+                            <%= text_field_tag "issue_sla[#{issue_sla.id}]", issue_slas.find_by_priority_id(issue_sla.id).allowed_delay, :size => 6,:maxlength => 6 %>
+                        <%else%>
+                            <%= text_field_tag "issue_sla[#{issue_sla.id}]", nil, :size => 6,:maxlength => 6 %>
+                        <%end%>
+
+                      </td>
+                    </tr>
+                <% end %>
+                </tbody>
+              </table>
+            </div>
+            <div class="tr_status" >
+              <h3>Status</h3>
+              <div class="select_all" style="float: left">
+                <span><input type="checkbox" id="Sselectall"/> Select All</span>
+              </div>
+              <table class="list priority_list">
+                <!--<table class="list scroll">-->
+                <thead><tr>
+                  <th  class="add_width">Apply</th>
+                  <th  class="add_width_status">Status</th>
+                  <th  colspan="2"    class="add_width_sla">SLA Timer </th>
+                  <th class="add_width">Approval SLA</th>
+                </tr></thead>
+                <tbody class="list_scrol">
+                <% IssueStatus.all.each do |status_sla| -%>
+
+                    <tr class="<%= cycle('odd', 'even') %>">
+                      <% issue_sla_statuses = IssueSlaStatus.where(:project_id=>@project.id,:tracker_id=>@tracker.id) %>
+                      <td  class="add_width"><%= check_box_tag "status_ids[]", status_sla.id, issue_sla_statuses.map(&:issue_status_id).include?(status_sla.id),:class=>"checkbox2"  %></td>
+                      <td  class="add_width_status">
+                        <%= h(status_sla.name) %>
+                      </td>
+                      <% status=IssueSlaStatus.where(:project_id=>@project.id,:tracker_id=>@tracker.id,:issue_status_id=>status_sla.id).last %>
+                      <%#= status =  @project.issue_sla_statuses.find_by_issue_status_id(status_sla.id)   %>
+
+                      <td  class="add_width_sla1"><%= radio_button_tag "status_sla[#{status_sla.id}]",'start', (status.present? && status.sla_timer == 'start') %>Start</td>
+                      <td  class="add_width_sla2"><%= radio_button_tag "status_sla[#{status_sla.id}]", 'stop', !(status.present? && status.sla_timer == 'start')  %>Stop</td>
+                      <% iss = IssueSlaStatus.find_by_issue_status_id_and_project_id_and_tracker_id(status_sla.id, @project.id, @tracker.id)%>
+                      <td  class="add_width"><%= check_box_tag "approval_sla_ids[]", status_sla.id, (iss.approval_sla rescue false),:class=>"checkbox2"  %></td>
+                    </tr>
+
+                <% end %>
+
+                </tbody>
+
+              </table>
+
+
+              <%#= link_to_function(l(:button_save),"send_tracker1('#{params[:id]}','#{params[:tab]}',#{@tracker.id})") %>
+
+            </div>
+            <div class = 'day_sla'>
+              <h3>Working Days</h3>
+              <table>
+                <% day=SlaWorkingDay.where(:project_id=>@project.id,:tracker_id=>@tracker.id).last %>
+                <% day1 = day.present? ? day.sun : false %>
+                <% day2 = day.present? ? day.mon : false %>
+                <% day3 = day.present? ? day.tue : false %>
+                <% day4 = day.present? ? day.wed : false %>
+                <% day5 = day.present? ? day.thu : false %>
+                <% day6 = day.present? ? day.fri : false %>
+                <% day7 = day.present? ? day.sat : false %>
+                <tr>
+                  <td><%= check_box_tag "working_days[1]", '', day1 %></td>
+                  <td>Sunday</td>
+                </tr>
+                <tr>
+                  <td><%= check_box_tag "working_days[2]", '', day2 %></td>
+                  <td>Monday</td>
+                </tr>
+                <tr>
+                  <td><%= check_box_tag "working_days[3]", '', day3 %></td>
+                  <td>Tuesday</td>
+                </tr>
+                <tr>
+                  <td><%= check_box_tag "working_days[4]", '', day4 %></td>
+                  <td>Wednesday</td>
+                </tr>
+                <tr>
+                  <td><%= check_box_tag "working_days[5]", '', day5 %></td>
+                  <td>Thursday</td>
+                </tr>
+                <tr>
+                  <td><%= check_box_tag "working_days[6]", '', day6 %></td>
+                  <td>Friday</td>
+                </tr><tr>
+                <td><%= check_box_tag "working_days[7]", '', day7 %></td>
+                <td>Saturday</td>
+              </tr>
+              </table>
+            </div>
+
+            <div style="float:left;padding:2%">
+              <h3>Working Time</h3>
+              <div>
+                <span>
+                <%= text_field_tag 'start_at',(day.start_at rescue nil), :id => 'start_from', :class => 'break_time'%></span>
+                <span><%= text_field_tag 'end_at',(day.end_at rescue nil), :id => 'end_to', :class => 'break_time'%></span>
+              </div>
+            </div>
+
+            <div class="working_hr" >
+              <hr>
+              <div style="float:left;padding:2%">
+                <h3>Break Time</h3>
+                <div>
+                <span>
+                <%= text_field_tag 'break_from',(day.break_from rescue nil), :id => 'break_from', :class => 'break_time'%></span>
+                  <span><%= text_field_tag 'break_to',(day.break_to rescue nil), :id => 'break_to', :class => 'break_time'%></span>
+                </div>
+              </div>
+
+              <hr>
+              <div style="float:left;padding:2%">
+                <h3>Response Time</h3>
+                <table><tr>
+
+                  <%
+                     hr = []
+                     for i in 0..10
+                       if i < 10
+                         hr << ['0' + i.to_s,i]
+                       else
+                         hr << [i,i]
+                       end
+                     end
+                  %>
+                  <% response_sla =ResponseSla.where(:project_id=>@project.id,:tracker_id=>@tracker.id).last %>
+                  <% r_hr = response_sla.response_set_time.to_s.split(/\./).first.to_i rescue 0 %>
+                  <% r_min = response_sla.response_set_time.to_s.split(/\./).last.to_i rescue 0 %>
+                  <% r_min = r_min.to_s.length == 1 ? r_min * 10 : r_min %>
+                  <td>
+
+                    <%= select_tag('response_hours', options_for_select(hr, :selected => r_hr ) )%>Hr</td> <td></td>
+                  <td><%= select_tag('response_min', options_for_select([['00',0], [15, 15], [30, 30], [45, 45]], :selected => r_min))%>Min</td><td></td>
+                </tr>
+                </table>
+              </div>
+
+
+
+
+
+              <hr>
+              <div style="float:left;padding:2%">
+                <%
+                   hr = []
+                   for i in 0..30
+                     if i < 10
+                       hr << ['0' + i.to_s,i]
+                     else
+                       hr << [i,i]
+                     end
+                   end
+                %>
+                <% response_sla =ResponseSla.where(:project_id=>@project.id,:tracker_id=>@tracker.id).last %>
+                <% closing = response_sla.ticket_closing rescue 0 %>
+                <% auto_closing = response_sla.auto_close rescue 0 %>
+                <div style="float:left;">
+                  <div><span style="float: left"><h3>Ticket Closing</h3></span>
+                    <span style="float: right">
+                      <%= select_tag('ticket_closing', options_for_select(hr, :selected => closing ) )%>Days
+                    </span>
+                  </div>
+                </div>
+                <hr>
+                <div style="float:left;">
+                  <div><span style="float: left"><h3>Auto Close</h3></span>
+                    <span style="float: right">
+                      <%= select_tag('auto_close', options_for_select(hr, :selected => auto_closing ) )%>Days
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          </fieldset>
+          <fieldset><legend align="center">Approver SLA</legend>
+            <table class="list priority_list ">
+              <% approval_roles = @project.approval_roles%>
+              <tr>
+                <th class=""><%= l(:field_priority) %></th>
+                <% approval_roles.each do |rec|%>
+                    <th class=""><%= rec.name %></th>
+                <% end %>
+              </tr>
+
+              <% IssuePriority.active.all.each do |priority| -%>
+                  <tr class="<%= cycle('odd', 'even') %>">
+                    <td class=" ">
+                      <%= h(priority.name) %>
+                    </td>
+                    <% approval_roles.each do |rec| %>
+                        <% approver = ApproverSla.find_by_project_id_and_tracker_id_and_approval_role_id_and_priority_id(@project.id,@tracker.id, rec.id,priority.id) %>
+                        <td class="">
+                          <% approverTime = approver.estimated_time rescue nil%>
+                          <%= text_field_tag "approver_sla[#{priority.name}][#{rec.id}]", (approverTime.nil? ? 0.0 : approver.estimated_time), :size => 6,:maxlength => 6 %>
+                        </td>
+                    <% end %>
+                  </tr>
+              <% end %>
+
+            </table>
+          </fieldset>
+
+          <%= submit_tag l(:button_save),:onclick => "return validate_closing();" %>
+
+      <% end %>
+<% else %>
+    <div class="select_tracker">
+      <%= form_tag({:controller => :issue_slas, :action => :update, :project_id => @project}, :method => :put, :class => "tabular") do %>
+          <span id="tracker_lable">Select Tracker:</span>
+          <div class="select_tracker1">
+            <%= select_tag "tracker_id", options_from_collection_for_select(@project.trackers, "id", "name"), :class => 'sla_tracker_selection' %>
+          </div>
+          <br>
+          <%= link_to_function(l(:button_apply),"send_tracker('#{params[:id]}','#{params[:tab]}')",:id=>"apply_tracker") %>
+      <% end %>
+    </div>
+<% end %>
+
+</fieldset>
+

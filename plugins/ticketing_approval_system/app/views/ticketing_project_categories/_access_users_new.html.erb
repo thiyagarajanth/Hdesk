@@ -1,0 +1,29 @@
+<h3 class="title"><%= l(:permission_add_access_users) %></h3>
+<% category_appr_config_helper = Object.new.extend(CategoryApprovalConfigsHelper) %>
+<%= form_tag({:controller => 'ticketing_project_categories',
+              :action => (watched ? 'create' : 'append'),
+              :object_type => (watched && watched.class.name.underscore),
+              :object_id => watched,
+              :project_id => @project},
+             :remote => true,
+             :method => :post,
+             :id => 'new-watcher-form') do %>
+<%#= @project.inspect %>
+    <p><%= label_tag 'user_search', l(:label_user_search) %><%= text_field_tag 'user_search', nil %></p>
+    <%= javascript_tag "observeSearchfield('user_search', 'users_for_watcher', '#{ escape_javascript url_for(:controller => 'ticketing_project_categories',
+                                                                                                             :action => 'autocomplete_for_user',
+                                                                                                             :object_type => (watched && watched.class.name.underscore),
+                                                                                                             :object_id => watched,
+                                                                                                             :project_id => @project) }')" %>
+
+    <div id="users_for_watcher">
+      <%= issue_principals_check_box_tags(@issue.present? && @issue.access_users.present? ? @issue.access_users.map(&:to_i) : [],'access_users[user_ids][]', users) %>
+    </div>
+
+    <p class="buttons">
+      <%= submit_tag l(:button_add), :name => nil, :onclick => "hideModal(this);" %>
+      <%= submit_tag l(:button_cancel), :name => nil, :onclick => "hideModal(this);", :type => 'button' %>
+    </p>
+<% end %>
+
+

@@ -1,0 +1,2 @@
+module ApiTicketsHelper
+end

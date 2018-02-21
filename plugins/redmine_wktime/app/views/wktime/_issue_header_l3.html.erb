@@ -1,0 +1,29 @@
+
+
+
+<% if check_bio_permission_list_user_id_project_id('l3',User.current.id,[params[:project_id].to_i])  %>
+<th align="left"><input type="checkbox" id="selectall_l3"></th>
+<% elsif check_bio_permission_list_user_id_project_id('l2',User.current.id,[params[:project_id].to_i])  %>
+    <th align="left"><input type="checkbox" id="selectall_home_l2"></th>
+<% end %>
+<th align="left"><%= l(:label_wktime_users) %></th>
+
+<% startOfMonth = getStartOfMonth(@startday) %>
+<% days_of_month = @total_days %>
+<% for i in 0..days_of_month.to_i %>
+<th>
+  <%= l('date.abbr_day_names')[(i+(startOfMonth))%7] %><br /><%= I18n.localize(@startday+i, :format=>:short) unless @startday.nil? %>
+<br />
+  <br>
+</th>
+<% end %>
+<th>Total</th>
+
+<% if controller.showWorktimeHeader %>
+
+<!-- Start, End and Total -->
+
+	<%= render :partial => 'worktime_header', :locals => {:str => 'start', :isEditable => true, :value => '0:00'}%>
+	<%= render :partial => 'worktime_header', :locals => {:str => 'end', :isEditable => true, :value => '0:00'}%>
+	<%= render :partial => 'worktime_header', :locals => {:str => 'total', :isEditable => false, :value => '0:00'}%>
+<% end %>

@@ -1,0 +1,44 @@
+  # Sample plugin
+  en:
+    field_value1: Value
+    field_cat_name: Name
+    field_project_category: Category
+    field_project_ids: Projects
+    field_approval_workflow: Approval Workflow
+    field_pre_status: Previous Status
+    project_module_redmine_issue_sla: Issues SLA
+    label_ticketing_approval_system: Ticketing Approval
+    label_ticketing_project_categories: Name
+    cat_name: Name
+    label_approval_policy: Approval Policy
+    label_ticket_policy: Ticket Policy
+    label_rejected_ticket_id: Ticket Id
+    label_rejected_ticket_subject: Subject
+    label_ticket_rejected_by: Rejected By
+    label_ticket_rejected_on: Rejected On
+    label_approved_ticket_id: Ticket Id
+    label_approved_ticket_subject: Subject
+    label_ticket_approved_by: Approved By
+    label_ticket_approved_on: Approved On
+    label_ticket_approved_reason: Reason
+    label_ticket_rejected_reason: Reason
+    field_due_date: Access Required Till
+    field_add_user: 'Add all Users'
+    label_manage_team_members: Manage Team
+    field_request_category: Request Category
+    description_selected_filter: With Current filter
+    description_all_cats: Without Filter(all)
+    label_import_options: CSV Import Options
+    label_category_importer: Category Importer
+    button_upload: Upload File
+    label_search_for_access_users: Search users to add
+    label_issue_access_users: Add multiple users
+    field_access_users: Add multiple users
+    button_update: Update access users
+    permission_add_access_users: Add users
+    label_dept_code: Department Code
+    field_description: Description & Reason for request
+    field_dashboard_visibility: Dashboard visibility
+    
+    
+

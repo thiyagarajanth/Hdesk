@@ -1,0 +1,57 @@
+<% if @inia_project.present?%>
+    <h2><legend><%= @inia_project.name.capitalize%> Approval Roles </legend></h2>
+    <div id="errorExplanation" class="tkt_err notification-msg" style="display: none"><ul><li></li></ul></div>
+
+    <% if @dept.present?%>
+        <% role_leves = ApprovalRole.maximum('level')%>
+        <div id="">
+          <table class="report_tble">
+            <tr>
+              <th>Department</th>
+              <% role_leves.times do |i| %>
+                <th>Approval Level <%= i +1 %></th>
+              <% end %>
+            </tr>
+            <% helper = Object.new.extend(IniaMembersHelper)%>
+            <%= form_tag add_member_rols_path(1),:remote => true, :method => :put, :id => 'member_role_form' do %>
+                <%= hidden_field_tag 'inia_project_id', @inia_project.id%>
+                <% @dept.compact.each do|project| %>
+                    <tr>
+                      <td> <%= project.name %></td>
+                      <% td_count = 0%>
+                      <% project.approval_roles.each_with_index do|role,i| %>
+                          <% td_count = td_count + 1%>
+                          <% user = helper.approval_user(@inia_project.id,role.project_id, role.level) %>
+                          <% name = helper.check_active_approver(user) %>
+                          <%= hidden_field_tag 'project_ids[]', role.project_id%>
+                          <%= hidden_field_tag 'role_ids[]', role.id%>
+                          <% rest_role = (role.can_restrict? && !User.current.admin?) ? 'restricted' : ''%>
+                          <% user_res = role.can_restrict?  ? 'user_search' : 'project_users'%>
+                          <td><%=text_field_tag 'user_ids[]',nil,:value=> user,  :class=>user_res+' '+rest_role, :id => project.id ,'data-option'=>name %></td>
+                      <% end %>
+                      <% (role_leves.to_i - td_count).times do |x| %>
+                        <td></td>
+                      <% end %>
+                    </tr>
+
+                <% end %>
+                <tr><td></td><td></td><td></td>
+                  <td></td><td><%= submit_tag 'Save All', :class => 'save_all_approver', disabled: true%></td> </tr>
+            <% end %>
+          </table>
+        </div>
+
+    <% end %><% end %>
+
+
+
+<%= javascript_tag do %>
+    $(document).ready(function(){
+        $('#tab-projects').click(function(){
+            window.location.href = window.location.protocol + "//" + window.location.host + "/inia_members"
+        });
+        $('#tab-lacking_workflow').click(function(){
+            window.location.href = window.location.protocol + "//" + window.location.host + "/inia_members?tab=lacking_workflow"
+        });
+    });
+<% end %>

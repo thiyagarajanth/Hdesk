@@ -1,0 +1,23 @@
+<h3>Dear <%= @author.name %>,</h3>
+<p  style="text-indent: 20px;">
+  The access for <%= link_to(@subject, @news_url)%>,  validity expires by <%=@date%>. Please initiate the steps to get approval for extending the services, failing which the services will be de-activated on <%=@date%>
+</p><p  style="text-indent: 20px;">
+We appreciate your prompt attention to this matter.
+</p>
+<br><br><br>
+<p>
+ Thanks!<br>
+<%= @dept_name %>
+</p><br><br>
+<p style="font-size: 9px">
+Note : This is auto generated message. Please do not reply.
+</p>
+
+
+
+<style type="text/css">
+    body {
+        background-color: #f5af46;
+    }
+    div{min-height: 300px;}
+</style>

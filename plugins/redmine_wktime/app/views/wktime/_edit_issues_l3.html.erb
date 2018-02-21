@@ -1,0 +1,99 @@
+<table id="issueTable" style="width: 100%;overflow: scroll;display: block;" class="list time-entries">
+  <thead>
+  <tr>
+    <%= render :partial => 'issue_header_l3'%>
+  </tr>
+  </thead>
+  <tbody>
+  <% user_bio_permission = check_project_permission(params[:project_id], 'bio_hours_display' )%>
+  <% l3_permission = check_project_permission(params[:project_id], 'l3' ) %>
+  <% l2_permission = check_project_permission(params[:project_id], 'l2' ) %>
+  <% new_entries.each do |each_entry| %>
+      <% currencySym = ""  %>
+      <% user_total_hr = 0%>
+      <% each_entry.each do |key,value| %>
+          <% entries = value[0] %>
+          <% user_id= key %>
+          <% time_data = entries%>
+          <tr>
+            <% check_box_status = check_box_status(key,params[:project_id],@startday,@endday)  %>
+            <% if l3_permission %>
+                <% status = check_l3_status_for_month_project(@startday,key,params[:project_id],@startday,@endday)  %>
+                <td class="user">
+                  <%= check_box_tag 'user_ids[]', key, false, class: 'accept_tos',:class=>"approval-checkbox approve_status_#{check_box_status} approval-checkbox_#{status}",onclick: "check_l3('#{status}');" %>
+                </td>
+            <% elsif l2_permission  %>
+                <% status = check_l2_status_for_month_project(@startday,key,params[:project_id],@startday,@endday)  %>
+                <td class="user">
+                  <%= check_box_tag 'user_ids[]', key, false, class: 'accept_tos',:class=>"approval-checkbox approve_status_#{check_box_status} approval-checkbox_#{status}",onclick: "check_home_l2('#{status}');" %>
+                </td>
+            <% end %>
+            <% user_name = get_user_name(key) %>
+            <% employee_id = get_emp_id(key)%>
+            <td class="user_name"><%= user_name %></td>
+            <td class="user" style="display:none"><%= key %></td>
+            <% total_hr = 0 %>
+            <% (start_dat..end_dat).each_with_index do |th,i| %>
+                <% approve_color = set_approved_color(value, th, user_id)%>
+                <td align="center" class=<%= approve_color%> >
+                  <span>
+                    <%result = time_data[th].present? ? time_data[th] : '0.0'  %>
+                    <%= currencySym %>&nbsp;<span id=<%= "day_total_#{i+1}" %>><%= ("%.2f" % result) %></span>
+                    <% total_hr += result.to_f%>
+                    <% if user_bio_permission %>
+                        <span style="color:red">
+                          <% if @user_hours.present? && @user_hours[employee_id].present?%>
+                            <% @user_hours[employee_id].each do |key,value| %>
+                                  <% if key.to_date == th %>
+                                    <%=  value  %>
+
+                                  <% end %>
+                            <% end %>
+                          <% end %>
+                        </span>
+                    <% end %>
+                  </span>
+                </td>
+            <% end %>
+            <% user_total_hr = total_hr%>
+      <% end %>
+      <td>
+        <b><%= currencySym %>&nbsp;<span id="total_hours"><%= ("%.2f" % user_total_hr) %></span></b>
+        <%=h hidden_field_tag('total', ("%.2f" % user_total_hr) ) %>
+        <%=h hidden_field_tag('unit', currencySym) %>
+      </td>
+      </tr>
+  <% end %>
+
+  </tbody>
+</table>
+
+<% if @wktime.nil? || @wktime.status == 'n' || @wktime.status == 'r' || @wktime.status == 'l1' || @wktime.status == 'l2' || @wktime.status == 'l3' %>
+    <% if !Setting.plugin_redmine_wktime[:wktime_use_approval_system].blank? &&
+            Setting.plugin_redmine_wktime[:wktime_use_approval_system].to_i == 1 && (check_bio_permission_list_user_id_project_id('l3',User.current.id,[params[:project_id].to_i]) || check_bio_permission_list_user_id_project_id('l2',User.current.id,[params[:project_id].to_i]))  %>
+        <% if check_bio_permission_list_user_id_project_id('l3',User.current.id,[params[:project_id].to_i])  %>
+            <%= link_to 'l3_present', "",:style=>"display:none;",:id=>"l3_present" %>
+            <%= submit_tag l(:button_wk_approve),:id => 'wktime_approve_l3',:name => 'wktime_approve',:onclick=>"l3_approve();",:disabled=>true,:confirm => Setting.plugin_redmine_wktime['wktime_submission_ack'] %>
+            <%= submit_tag l(:button_wk_reject),:name => 'wktime_reject',:id=>"wktime_reject_l3",:disabled=>true,:onclick => "return showNotes();"  %>
+        <% elsif check_bio_permission_list_user_id_project_id('l2',User.current.id,[params[:project_id].to_i])  %>
+            <%= link_to 'home_l2_present', "",:style=>"display:none;",:id=>"home_l2_present" %>
+            <%= submit_tag l(:button_wk_approve),:id => 'wktime_approve_home_l2',:name => 'wktime_approve',:onclick=>"home_l2_approve();",:disabled=>true,:confirm => Setting.plugin_redmine_wktime['wktime_submission_ack'] %>
+            <%= submit_tag l(:button_wk_reject),:name => 'wktime_reject',:id=>"wktime_reject_home_l2",:disabled=>true,:onclick => "return showNotes();"  %>
+        <% end %>
+    <% end %>
+<% end %>
+
+<% if !Setting.plugin_redmine_wktime[:wktime_use_approval_system].blank? &&
+        Setting.plugin_redmine_wktime[:wktime_use_approval_system].to_i == 1 %>
+    <% if check_bio_permission_list_user_id_project_id('l3',User.current.id,[params[:project_id].to_i]) %>
+        <% if controller.check_approvable_status_l3(@startday,@endday)  %>
+            <%= submit_tag l(:button_wk_disapprove),:name => 'wktime_unapprove',:id=>"wktime_unapprove_l3",:disabled=>true %>
+        <% end %>
+    <% elsif check_bio_permission_list_user_id_project_id('l2',User.current.id,[params[:project_id].to_i])  %>
+        <% if controller.check_approvable_status_home_l2(@startday,@endday)  %>
+            <%= submit_tag l(:button_wk_disapprove),:name => 'wktime_unapprove',:id=>"wktime_unapprove_home_l2",:disabled=>true %>
+        <% end %>
+    <% end %>
+<% end %>
+
+<%= context_menu time_entries_context_menu_path %>

@@ -1,0 +1,73 @@
+<%= javascript_include_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+<%= javascript_include_tag 'jRate', :plugin => "ticketing_approval_system" %>
+<%= stylesheet_link_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+<div class="contextual">
+<%= link_to(l(:button_change_password), {:action => 'password'}, :class => 'icon icon-passwd') if @user.change_password_allowed? %>
+<%= call_hook(:view_my_account_contextual, :user => @user)%>
+</div>
+
+<h2><%=l(:label_my_account)%></h2>
+<%= error_messages_for 'user' %>
+
+<%= labelled_form_for :user, @user,
+                     :url => { :action => "account" },
+                     :html => { :id => 'my_account_form',
+                                :method => :post } do |f| %>
+<div class="splitcontentleft">
+<fieldset class="box tabular">
+  <legend><%=l(:label_information_plural)%></legend>
+  <p><%= f.text_field :firstname, :required => true %></p>
+  <p><%= f.text_field :lastname, :required => true %></p>
+  <p><%= f.text_field :mail, :required => true %></p>
+  <p><%= f.select :language, lang_options_for_select %></p>
+  <% if Setting.openid? %>
+  <p><%= f.text_field :identity_url  %></p>
+  <% end %>
+
+ <% @user.custom_field_values.select(&:editable?).each_with_index do |value| %>
+
+      <% custom_field =CustomField.where(:id=>value.custom_field_id) %>
+      <% if custom_field.present? && (custom_field.last.name=="Emp_code") %>
+
+          <% if User.current.admin? %>
+              <p><%= custom_field_tag_with_label :user, value %></p>
+          <% else %>
+
+          <% end %>
+
+      <% end %>
+
+  <% end %>
+
+  <%= call_hook(:view_my_account, :user => @user, :form => f) %>
+
+</fieldset>
+  <% if TeamProfile.where(:display => true, :user_id => User.current.id).count > 0 %>
+  <fieldset class="box tabular" >
+    <legend>Your Rating</legend>
+    <span id="user_avg_rating"></span>
+  </fieldset>
+  <% end %>
+<%= submit_tag l(:button_save), "data_user_id" => User.current.id %>
+</div>
+
+<div class="splitcontentright">
+<fieldset class="box">
+  <legend><%=l(:field_mail_notification)%></legend>
+  <%= render :partial => 'users/mail_notifications' %>
+</fieldset>
+
+<fieldset class="box tabular">
+  <legend><%=l(:label_preferences)%></legend>
+  <%= render :partial => 'users/preferences' %>
+  <%= call_hook(:view_my_account_preferences, :user => @user, :form => f) %>
+</fieldset>
+
+</div>
+<% end %>
+
+<% content_for :sidebar do %>
+<%= render :partial => 'sidebar' %>
+<% end %>
+
+<% html_title(l(:label_my_account)) -%>

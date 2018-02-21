@@ -1,0 +1,81 @@
+<%= form_tag(update_user_avatar_path(@user), :multipart => true, :id => 'avatar-form') do -%>
+  <div style="width: 148px; float: left;">
+
+    <div id="preview-box" class="gravatar">
+      <%= avatar(@user, :size => "128", :id => 'preview', :class => '') %>
+    </div><br />
+
+  </div>
+
+  <fieldset class="box tabular">
+    <legend><%= l(:label_capture_or_upload) %></legend>
+    <p class="avatar-upload">
+      <label><%= l(:label_upload) %></label>
+      <span id="attachments_fields"></span>
+
+      <%= content_tag :span, :class => "add_attachment",
+          :data => {
+            :upload_path => avatar_upload_path(:id => @user, :format => 'js'),
+            :crop => can_crop_images?,
+            :attachments_container => '#attachments_fields',
+            :file_field_container => '.add_attachment'
+          } do -%>
+        <%= file_field_tag 'attachment[file]', :class => 'file_selector' -%>
+      <% end -%>
+    </p>
+    <p class="avatar-capture">
+      <label><%= l(:label_webcam) %></label>
+      <button id="start-webcam"><%= l(:button_start_webcam) %></button>
+      <button id="stop-webcam"><%= l(:button_stop_webcam) %></button>
+      <button id="capture-webcam" disabled="disabled"><%= l(:button_capture_photo) %></button>
+    </p>
+  </fieldset>
+
+  <fieldset class="box tabular">
+    <legend><%= can_crop_images? ? l(:label_preview_and_crop) : l(:label_preview) %></legend>
+
+    <div class="gravatar blank-avatar">
+      <%= image_tag "default.jpg", :plugin => "redmine_local_avatars" %>
+    </div>
+
+    <%= content_tag :div, nil, :class => 'gravatar crop-avatar',
+      :data => {
+        :crop_x => 'crop_x',
+        :crop_y => 'crop_y',
+        :crop_w => 'crop_w',
+        :crop_h => 'crop_h',
+        :previewContainer => '#preview-box'
+      } -%>
+
+    <%= content_tag :div, nil, :class => 'gravatar capture-avatar',
+        :data => {
+          :start_button => '#start-webcam', :stop_button => '#stop-webcam',
+          :capture_button => '#capture-webcam', :cameras_select => '#capture-cameras select',
+          :preview_width => 300, :preview_height => 300,
+          :resolution_width => 480, :resolution_height => 480,
+          :swffile => plugin_image_path('sAS3Cam.swf', :plugin => 'redmine_local_avatars'),
+          :filefield => 'attachment[file]',
+          :filename => "#{@user.login}.jpg",
+          :post_url => avatar_upload_path(:id => @user, :format => 'js')
+        } -%>
+
+    <p id="capture-cameras">
+      <label><%= l(:label_cameras) %></label>
+      <select></select>
+    </p>
+  </fieldset>
+
+  <div style="clear:both;"></div>
+  <div>
+  <%= submit_tag l(:button_save) %>
+  <%= submit_tag l(:button_delete), :type => 'button', :id => 'delete-avatar', :name => 'delete',
+        :confirm => l(:text_are_you_sure),
+        :data => { :method => :delete, :url => destroy_user_avatar_url(@user), :remote => true } %>
+  </div>
+<% end -%>
+
+<% content_for :header_tags do %>
+  <%= stylesheet_link_tag 'local_avatars.css', :plugin => 'redmine_local_avatars' %>
+  <%= stylesheet_link_tag 'jquery.Jcrop.css', :plugin => 'redmine_local_avatars' %>
+  <%= javascript_include_tag 'local_avatars-form-webcam-jcrop-avatars.min.js', :plugin => 'redmine_local_avatars' %>
+<% end %>

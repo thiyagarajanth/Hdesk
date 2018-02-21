@@ -1,0 +1,64 @@
+<%= javascript_include_tag 'jRate', :plugin => "ticketing_approval_system" %>
+<h2>User Rating</h2>
+<%= form_tag({ :controller => 'sla_reports', :action => 'user_rating', :project_id => @project.id },
+             :method => :get) do %>
+    <div id="query_form_with_buttons" >
+      <fieldset id="date-range" >
+        <div   >
+          <%= label_tag 'User'%>
+          <%= select_tag 'rate_user_id', options_from_collection_for_select(team_members(@project),'user_id', 'name',params[:rate_user_id]), :prompt => 'All Users' %>
+          <span>
+              <%= radio_button_tag 'period_type', '1', !@free_period, :checked=>(params['period_type'].present? && params['period_type']=='1') ,:onclick => '$("#rate_from,#rate_to").attr("disabled", true);$("#period1").removeAttr("disabled");' %>
+              <%= select_tag 'period1', options_for_period_select(params[:period1]),
+                             :onfocus => '$("period_type_1").checked = true;',
+                             :disabled => @free_period %>
+          </span>
+          <span >
+                <%= radio_button_tag 'period_type', '2', @free_period,:checked=>(params['period_type'].present? && params['period_type']=='2'), :onclick => '$("#rate_from,#rate_to").removeAttr("disabled");$("#period1").attr("disabled", true);' %>
+              <%= l(:label_date_from_to, :start => (text_field_tag('rate_from',params[:rate_from], :size => 10) + calendar_for('rate_from')),
+                    :end => (text_field_tag('rate_to', params[:rate_to], :size => 10 ) + calendar_for('rate_to'))).html_safe %>
+</span>
+        </div>
+      </fieldset>
+      <p class="buttons">
+        <%= submit_tag l(:button_apply),  :class => 'icon icon-checked' %>
+        <%#= link_to l(:button_apply), {:controller => controller_name, :action => action_name, :project_id => @project, :issue_id => @issue}, :class => 'icon icon-checked' %>
+        <%= link_to l(:button_clear), {:controller => controller_name, :action => action_name, :project_id => @project, :issue_id => @issue,:tab => controller_name}, :class => 'icon icon-reload' %>
+      </p>
+
+    </div>
+<% end %>
+
+
+<div class="rating_master_div" >
+  <% if !@result.present? %>
+      <p class="nodata"><%= l(:label_no_data) %></p>
+  <% else %>
+      <div>
+        <table class="report_tble" >
+          <tr>
+            <th>Name</th>
+            <th>Total Tickets</th>
+            <th>Rating</th>
+          </tr>
+          <% data = {} %>
+          <% @result.each_with_index do |rec, i|%>
+              <tr>
+                <td class='rating_name'>
+                  <%=  rec[:name].present? ? rec[:name] : User.find(rec[:user_id]).login.capitalize  %>
+                </td>
+                <td class='popupWind'>
+                  <%= link_to rec[:count], project_issues_path(@project, data.merge!(:rated_for =>rec[:user_id],:period_type => params[:period_type], :from => params[:rate_from].present? ? params[:rate_from] : nil, :period => params[:period1].present? ? params[:period1] : nil,:to => params[:rate_to].present? ? params[:rate_to] : nil)) , :method=> :get, :target => "_blank"  %>
+                </td>
+                <td class='popupWind'>
+                  <%#=  rec[:avg] %>
+                  <span class="user_rating" id="rating_<%=i%>" data-rating="<%= rec[:avg]%>" onload="runRating();"></span>
+                </td>
+              </tr>
+          <% end %>
+        </table>
+      </div>
+
+  <% end %>
+
+</div>

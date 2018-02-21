@@ -1,0 +1,10 @@
+source 'http://rubygems.org'
+
+gem "rufus-scheduler", "3.0.3"
+
+#gem 'whenever', :require => false
+gem 'rest-client'
+group :development, :test do
+  gem 'rspec-rails', '~> 3.0.0'
+end
+gem 'newrelic_rpm'

@@ -1,0 +1,82 @@
+<%= javascript_include_tag 'sla', :plugin => "redmine_issue_sla" %>
+
+<%= labelled_fields_for :issue, @issue do |f| %>
+    <%= call_hook(:view_issues_form_details_top, { :issue => @issue, :form => f }) %>
+
+    <% if @issue.safe_attribute? 'is_private' %>
+        <p style="float:right; margin-right:1em;">
+          <%= f.check_box :is_private, :no_label => true %><label class="inline" for="issue_is_private" id="issue_is_private_label"><%= l(:field_is_private) %></label>
+        </p>
+    <% end %>
+
+    <% if @issue.safe_attribute? 'project_id' %>
+        <p><%= f.select :project_id, project_tree_options_for_select(@issue.allowed_target_projects, :selected => @issue.project), {:required => true},
+                        :onchange => "updateIssueFrom('#{escape_javascript project_issue_form_path(@project, :id => @issue, :format => 'js')}')" %></p>
+    <% end %>
+
+    <% if @issue.safe_attribute? 'tracker_id' %>
+        <%if @issue.project.enabled_modules.map(&:name).include?('redmine_issue_sla')%>
+            <p><%#= f.select :tracker_id, @issue.project.trackers.collect {|t| [t.name, t.id]}, {:required => true}, 'data-url' => project_issue_form_path(@project, :id => @issue), :class => 'form_tracker' %></p>
+            <p><%= f.select :tracker_id, @issue.project.trackers.collect {|t| [t.name, t.id]}, {:required => true}, :onchange => "updateIssueFrom('#{escape_javascript project_issue_form_path(@project, :id => @issue, :format => 'js')}')" , 'data-url' => project_issue_form_path(@project, :id => @issue), :class => 'form_tracker'%></p>
+        <%else%>
+            <p><%= f.select :tracker_id, @issue.project.trackers.collect {|t| [t.name, t.id]}, {:required => true}, :onchange => "updateIssueFrom('#{escape_javascript project_issue_form_path(@project, :id => @issue, :format => 'js')}')" , :class => 'form_tracker'%></p>
+        <%end%>
+
+    <% end %>
+    <%if @issue.project.enabled_modules.map(&:name).include?('redmine_issue_sla')%>
+        <% state =  IssueSlaStatus.where(:project_id => @issue.project.id, :tracker_id => @issue.tracker.id, :issue_status_id => @issue.status.id).last%>
+        <% if state.present? %>
+        <% state = state%>
+        <%else%>
+        <% state =  IssueSlaStatus.where(:project_id => @issue.project.id, :tracker_id => @issue.tracker.id).last%>
+        <% end %>
+        <%= hidden_field_tag(:old_status_id, state.id) if state.present? %>
+
+    <% end %>
+
+    <% sla_module = @issue.project.enabled_modules.map(&:name).include?('ticketing_approval_system')%>
+    <% plugin_list = []%>
+    <% Redmine::Plugin.registered_plugins.each{ |x| plugin_list << x[0] } %>
+    <% plugin_list.include?(:ticketing_approval_system) %>
+
+    <% if @issue.safe_attribute? 'subject' %>
+        <% if params[:id].present? && plugin_list.include?(:ticketing_approval_system) && sla_module %>
+            <% ticket_id = @issue.issue_ticket_tag.present? ? @issue.issue_ticket_tag.ticket_tag_id : nil%>
+        <% else %>
+            <% ticket_id = 0 %>
+        <% end %>
+        <p id="issue_sub"><%= f.text_field :subject, :size => 80, :maxlength => 255, :required => true, :id => 'frm_sub', data:{tag: ticket_id} %></p>
+    <% end %>
+
+    <% if @issue.safe_attribute? 'description' %>
+        <p>
+          <%= f.label_for_field :description, :required => @issue.required_attribute?('description') %>
+          <%= link_to_function image_tag('edit.png'), '$(this).hide(); $("#issue_description_and_toolbar").show()' unless @issue.new_record? %>
+          <%= content_tag 'span', :id => "issue_description_and_toolbar", :style => (@issue.new_record? ? nil : 'display:none') do %>
+              <%= f.text_area :description,
+                              :cols => 60,
+                              :rows => (@issue.description.blank? ? 10 : [[10, @issue.description.length / 50].max, 100].min),
+                              :accesskey => accesskey(:edit),
+                              :class => 'wiki-edit',
+                              :no_label => true %>
+          <% end %>
+        </p>
+        <%= wikitoolbar_for 'issue_description' %>
+    <% end %>
+
+    <div id="attributes" class="attributes">
+      <%= render :partial => 'issues/attributes' %>
+    </div>
+
+    <%= call_hook(:view_issues_form_details_bottom, { :issue => @issue, :form => f }) %>
+<% end %>
+
+<% heads_for_wiki_formatter %>
+
+<%= javascript_tag do %>
+    $(document).ready(function(){
+    $("#issue_tracker_id, #issue_status_id").each(function(){
+    $(this).val($(this).find("option[selected=selected]").val());
+    });
+    });
+<% end %>

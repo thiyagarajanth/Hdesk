@@ -1,0 +1,19 @@
+# Japanese strings go here
+ja:
+  label_avatar: "アバター"
+  label_my_avatar: "マイ アバター"
+  label_cameras: "カメラ"
+  label_capture_or_upload: "撮影/アップロード"
+  label_preview_and_crop: "プレビューして切り取り"
+  label_preview: "プレビュー"
+  label_upload: "アップロード"
+  label_webcam: "カメラ"
+
+  button_change_avatar: "アバターの変更"
+  button_stop_webcam: "停止"
+  button_start_webcam: "開始"
+  button_capture_photo: "撮影"
+  are_you_sure_delete_avatar: "アバターを削除してもよろしいですか？"
+  avatar_deleted:  "アバターは削除されました。"
+  unable_to_delete_avatar:  "アバターの削除中にエラーが発生しました。"
+  message_avatar_uploaded: "アバターのアップロードを完了しました。"

@@ -1,0 +1,54 @@
+<h2><legend>Approval Role configuration</legend></h2>
+<div id="errorExplanation" class="tkt_err notification-msg" style="display: none"><ul><li></li></ul></div>
+<div>
+  <% project = params[:dept_id].present? ? Project.find(params[:dept_id]) : nil %>
+    <%= form_tag(inia_members_lacking_approvals_path, :method => 'get') do %>
+      <div style="padding:5px;float: left">
+        <span>
+
+          <% project_data = project.present? ? [project.id,project.name] :  ['','']%>
+        Department:
+          <%= text_field_tag 'dept_id', :dept_id, :class => 'dept_search',:value=> project_data[0], 'data-option'=>project_data[1] %>
+          <%= hidden_field_tag('list',true) %></span>
+        <span><%= submit_tag l(:button_apply), :class => 'button-small search_dept', :name => nil %></span></div>
+
+    <% end %>
+  <span style="float: right"><%= submit_tag 'Save All', :class => 'button-small save_all_approver', disabled: true %></span>
+
+</div>
+<% if project.present?%>
+
+<div id="report_container">
+<table class="report_tble">
+  <tr>
+      <th>Project</th>
+    <% @levels.each do|level| %>
+    <th> <%= level.name %></th>
+    <% end %>
+    <th></th>
+  </tr>
+    <% @project_list.each_with_index do |project, i| %>
+    <tr>
+        <%= form_tag inia_members_group_users_path do %>
+        <td class="project_name"><%= project[0]%></td>
+          <%= hidden_field_tag 'inia_project_id[]', project[1] %>
+        <% project[2].each do|rec| %>
+          <td>
+
+            <%#  project.inia_members.each{|a|  data =[a.user.id,a.user.firstname]  if a.approval_roles.where(:project_id => params[:dept_id]).map(&:level).include?(rec.level)}%>
+
+            <%= text_field_tag 'user_id[]', nil,:value=> rec[0][0], :class=>'user_search name_search a'+rec[2].to_s, 'data-option'=>rec[0][1] %>
+            <%= hidden_field_tag 'role_id[]', rec[1]%>
+            <%= hidden_field_tag 'project_ids[]', rec[4]%>
+            <% if rec[3] == true  %>
+                <a href="#" class="repeat-value repeat_a a<%=rec[2].to_s%>">⇓</a>
+            <% end %>
+          </td>
+        <% end %>
+          <td><%= submit_tag 'Save', :class => 'config_save', :type => 'button', disabled: true%></td>
+          <%end%>
+    </tr>
+<% end %>
+</table>
+    </div>
+<%end%>

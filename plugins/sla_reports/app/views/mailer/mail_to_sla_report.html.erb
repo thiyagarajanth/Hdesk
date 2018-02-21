@@ -1,0 +1,91 @@
+<h2>Dear Allwyn Herbert Raja</h2>
+<p>
+	Please find the below DGO products SLA Reports.
+  Duration ( <%= (Date.today-7).strftime("%d-%b-%Y") %> - <%= Date.today.strftime("%d-%b-%Y") %>)
+</p>
+<% @var.each do |key,value| %>
+
+	<div>
+	<b><%= key[:name] %></b>
+
+<table  id="sla_report_tbl" class="report_tble">
+	<tr>
+		<th>Ticket Priority</th>
+		<th>No of Ticket Resolved</th>
+		<th>Not of Ticket Met SLA</th>
+		<th>No of Ticket Not Met SLA</th>
+		<th>SLA Percentage</th>
+	</tr>
+
+  <% key[:sla].each_with_index do |sla, i|%>
+      <tr>
+        <td style="text-align: left"><%= sla.keys[0] %></td>
+        <td >
+          <%#= link_to sla.values[0], project_issues_path(@project,:issue_ids =>  sla.values[1]), :method=> :get, :target => "_blank" %>
+          <%if sla.values[0] > 0%>
+              <%= sla.values[0] %>
+              <%#= link_to sla.values[0], project_issues_path(@project, data.merge!(:status => '0', :priority =>sla.keys[0], :pos => i) ), :method=> :get, :target => "_blank" %>
+          <%else%>
+              <%=  sla.values[0] %>
+          <%end%>
+        </td>
+        <td >
+          <%if sla.values[1].count > 0%>
+              <%= sla.values[1].count %>
+              <%#= link_to sla.values[1].count, project_issues_path(@project, data.merge!(:status => '1', :priority =>sla.keys[0], :pos => i) ), :method=> :get, :target => "_blank" %>
+          <%else%>
+              <%=  sla.values[1].count %>
+          <%end%>
+        </td>
+        <td >
+          <%if sla.values[2].count > 0%>
+              <%=  sla.values[2].count %>
+              <%#= link_to sla.values[2].count, project_issues_path(@project, data.merge!(:status => '2', :priority =>sla.keys[0], :pos => i) ), :method=> :get, :target => "_blank" %>
+          <%else%>
+              <%=  sla.values[2].count %>
+          <%end%>
+        </td>
+        <td>
+          <% val =  sla.values[3].round(2).nan? ? 0 : sla.values[3]  %>
+          <%= val > 0 ?  "#{sla.values[3].round(2)} %" : '' %>
+          </td>
+      </tr>
+  <% end %>
+  <tr style="font-weight: bold;background-color: rgba(114, 125, 68, 0.13);">
+    <td>Total</td>
+    <% key[:total].flatten.each_with_index do |x,i|%>
+        <td>
+
+          <%if key[:total].flatten.count == i+1 %>
+              <%= key[:total].flatten[i].nan? ? '' : "#{key[:total].flatten[i]} %"  %>
+          <% else%>
+              <%= key[:total].flatten[i] %>
+          <% end %>
+        </td>
+    <% end %>
+  </tr>
+
+	
+
+        
+</table>
+</div></br>
+<% end %>
+<style>
+
+
+table.report_tble{
+    border: 1px solid #e4e4e4;
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 4px;
+    font-size: 11px;
+}
+ .report_tble th{
+     background-color: #EEEEEE;
+     padding: 8px;
+ }
+.report_tble td{text-align: center;
+    vertical-align: top;
+    padding-right: 10px;}
+</style>

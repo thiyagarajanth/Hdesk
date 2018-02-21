@@ -1,0 +1,18 @@
+ru:
+  label_avatar: "Фотография"
+  label_my_avatar: "Моя фотография"
+  label_cameras: "Камеры"
+  label_capture_or_upload: "Захват или загрузка"
+  label_preview_and_crop: "Предпросмотр и кадрирование"
+  label_preview: "Предпросмотр"
+  label_upload: "Загрузка на сервер"
+  label_webcam: "Web-камера"
+
+  button_change_avatar: "Изменить фотографию"
+  button_stop_webcam: "Стоп"
+  button_start_webcam: "Старт"
+  button_capture_photo: "Захват"
+  are_you_sure_delete_avatar: "Вы уверены, что хотите удалить вашу фотографию ?"
+  avatar_deleted:  "Фотография удалена"
+  unable_to_delete_avatar:  "При удалении фотографии произошла ошибка"
+  message_avatar_uploaded: "Фотография успешно загружена на сервер"

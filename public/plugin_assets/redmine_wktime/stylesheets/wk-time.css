@@ -1,0 +1,8 @@
+.wk-contextual {text-align: right; white-space: nowrap; line-height:1.4em;margin-top:5px; margin-bottom:10px; padding-left: 10px; font-size:0.9em;}
+.approval-checkbox{width:95%;margin-top: 5px;}
+.l3_approved{border-bottom: 3px solid #6EC16E !important;}
+.l2_approved{ border-bottom: 3px solid #ff9900 !important;}
+.l1_approved{ border-bottom: 3px solid #D8D830 !important;}
+.reject_approval{border-bottom: 3px solid #FF5959 !important;}
+.lock_entry{border-bottom: 3px solid #A4A4A4 !important;}
+.page {margin-top:8px; font-size: 10px; }

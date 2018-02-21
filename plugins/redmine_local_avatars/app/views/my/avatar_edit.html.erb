@@ -1,0 +1,15 @@
+<div class="contextual">
+  <%= link_to(l(:button_change_password), {:controller => :my, :action => :password}, :class => 'icon icon-passwd') if @user.change_password_allowed? %>
+  <%= call_hook(:view_my_account_contextual, :user => @user)%>
+</div>
+
+<h2><%=l(:label_my_avatar)%></h2>
+<%= error_messages_for 'user' %>
+
+<%= render :partial => 'avatar/form' %>
+
+<% content_for :sidebar do %>
+<%= render :partial => 'my/sidebar', :controller => 'my' %>
+<% end %>
+
+<% html_title(l(:label_my_account)) -%>

@@ -1,0 +1,10 @@
+<%= stylesheet_link_tag 'sla_reports', :plugin => "sla_reports" %>
+<%= javascript_include_tag 'sla_reports', :plugin => "sla_reports" %>
+
+<% if params[:action] == 'user_rating' %>
+    <%= render_tabs project_reports_tabs, 'user_rating'%>
+<% else %>
+  <%= render_tabs project_reports_tabs %>
+<% end %>
+
+

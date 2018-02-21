@@ -1,0 +1,211 @@
+<%= stylesheet_link_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+<%= javascript_include_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+<%= javascript_include_tag 'jRate', :plugin => "ticketing_approval_system" %>
+
+
+
+
+
+<div class="contextual">
+  <% if User.current.allowed_to?(:add_subprojects, @project) %>
+    <%= link_to l(:label_subproject_new), new_project_path(:parent_id => @project), :class => 'icon icon-add' %>
+  <% end %>
+  <% if User.current.allowed_to?(:close_project, @project) %>
+    <% if @project.active? %>
+      <%= link_to l(:button_close), close_project_path(@project), :data => {:confirm => l(:text_are_you_sure)}, :method => :post, :class => 'icon icon-lock' %>
+    <% else %>
+      <%= link_to l(:button_reopen), reopen_project_path(@project), :data => {:confirm => l(:text_are_you_sure)}, :method => :post, :class => 'icon icon-unlock' %>
+    <% end %>
+  <% end %>
+</div>
+
+<h2><%=l(:label_overview)%></h2>
+
+<% unless @project.active? %>
+  <p class="warning"><span class="icon icon-lock"><%= l(:text_project_closed) %></span></p>
+<% end %>
+
+<div class="splitcontentleft">
+  <% if @project.description.present? %>
+  <div class="wiki">
+    <%= textilizable @project.description %>
+  </div>
+  <% end %>
+
+  <% if User.current.allowed_to?(:view_issues, @project) %>
+  <div class="issues box">
+    <h3><%=l(:label_issue_tracking)%></h3>
+    <ul>
+
+      <% if TeamProfile.where(:project_id => @project.id).map(&:user_id).include?(User.current.id) || User.current.admin %>
+        <% statuses = IssueStatus.find_by_sql("select si.* from issue_statuses si join default_assignee_setups ds on ds.status_id=si.id join projects p on p.id=ds.project_id where p.id=#{@project.id} and ds.display_in_overview=true  order by si.position") %>
+        <% for status in statuses %>
+          <li><%= link_to h(status.name), project_issues_path(@project, :set_filter => 1, :status_id => status.id) %>:
+              <%=  @project.ticket_status_count(status.id)  %>
+          </li>
+        <% end %>
+          <% count = Issue.find_by_sql("select count(*) as count from issues i join issue_statuses si on si.id=i.status_id where i.project_id=#{@project.id} and si.name not in ('Resolved', 'Closed','Information requested', 'Need Clarification','Accept Agreement', 'Rejected','Waiting for approval')").map(&:count).first%>
+          <li>
+            <%= link_to h('Total tickets'), project_issues_path(@project, :set_filter => 1, :f=>["status_id", ""], :op=>{"status_id"=>"!"}, :v=>{:status_id=>["3", "38", "5", "6", "37", "43","27"]}) %>:
+            <%=  "#{count} ongoing / #{@project.issues.count}"  %>
+          </li>
+      <% else %>
+          <% for tracker in @trackers %>
+              <li><%= link_to h(tracker.name), project_issues_path(@project, :set_filter => 1, :tracker_id => tracker.id) %>:
+                <%= l(:label_x_open_issues_abbr_on_total, :count => @open_issues_by_tracker[tracker].to_i,
+                      :total => @total_issues_by_tracker[tracker].to_i) %>
+              </li>
+          <% end %>
+      <% end %>
+
+    </ul>
+    <p>
+      <%= link_to l(:label_issue_view_all), project_issues_path(@project, :set_filter => 1) %>
+      <% if User.current.allowed_to?(:view_calendar, @project, :global => true) %>
+        | <%= link_to l(:label_calendar), project_calendar_path(@project) %>
+      <% end %>
+      <% if User.current.allowed_to?(:view_gantt, @project, :global => true) %>
+        | <%= link_to l(:label_gantt), project_gantt_path(@project) %>
+      <% end %>
+    </p>
+  </div>
+  <% end %>
+
+  <%# Due to requirement change we commented this block %>
+  <% if false %>
+      <% if User.current.allowed_to?(:view_issues, @project) %>
+          <div class="issues box">
+            <h3> My Rating </h3>
+            <ul>
+              <li>
+                <%= link_to h('Tickets Resolved by Me'), project_issues_path(@project, :set_filter => 1, :resolved_by => 'me', :status_id => "*") %>:
+                <span id="userRating_resolved" data-user_id="<%= 311 %>" ></span>
+              </li>
+              <li>
+                <%= link_to h('My Rating'), '#' %>:
+                <span id="userRating_user" data-user_id="<%= 311 %>" ></span>
+              </li>
+            </ul>
+          </div>
+      <% end %>
+
+      <div class="issues box">
+        <h3>
+          <%= link_to l(:label_assigned_to_me_issues),
+                      issues_path(:set_filter => 1, :assigned_to_id => 'me', :sort => 'priority:desc,updated_on:desc') %>
+          (<%= Issue.visible.open.where(:assigned_to_id => ([User.current.id] + User.current.group_ids)).count %>)
+        </h3>
+    <% helper = Object.new.extend(CategoryApprovalConfigsHelper) %>
+        <% assigned_issues = helper.ticketsassignedtome_items(@project.id) %>
+        <%= render :partial => 'issues/list_assigned', :locals => { :issues => assigned_issues } %>
+
+        <% content_for :header_tags do %>
+            <%= auto_discovery_link_tag(:atom,
+                                        {:controller => 'issues', :action => 'index', :set_filter => 1,
+                                         :assigned_to_id => 'me', :format => 'atom', :key => User.current.rss_key},
+                                        {:title => l(:label_assigned_to_me_issues)}) %>
+        <% end %>
+      </div>
+  <% end %>
+
+   <%= call_hook(:view_projects_show_left, :project => @project) %>
+</div>
+
+<div class="splitcontentright">
+  <%#= render :partial => 'members_box' %>
+  <%#= image_tag("#{@project.identifier}.png", :style => 'width:100%',:title => "Members")%>
+    <%if Redmine::Plugin.registered_plugins.keys.include?(:redmine_local_avatars) %>
+      <% profiles = @project.team_profiles %>
+      <div id="foot-team">
+        <% if profiles.present? %>
+            <div id="team_call"><%= image_tag 'call.png', height: '20', width: '20', :class => 'call_mail'%><span style="letter-spacing: -1px;">: <%= @project.project_contact('Extension').gsub("/"," / ") %></span></div>
+            <div id="team_mail"><%= image_tag 'mail.jpg', height: '20', width: '20', :class => 'call_mail'%><span>: <%= @project.project_contact('Mail') %></span></div>
+        <% end %>
+      </div>
+      <table id="member_rate">
+        <tr>
+        <% profiles.where(:display=>true).order('priority').each_with_index do |rec, i|%>
+            <% user = User.find(rec[:user_id]) %>
+              <%# rate = @project.get_users_rating(user.id) %>
+              <% emp = UserOfficialInfo.find_by_user_id(user.id)%>
+                <% helper = Object.new.extend(AvatarHelper) %>
+
+              <% img = helper.get_profile_pic((emp.employee_id rescue 0))%>
+
+              <% if img.present? && user.active?%>
+
+              <td>
+
+                  <div>
+                    <img  src="data:image/png;base64,<%= img%>"  alt="rss feed" width='100' height='100' class= 'img-circle' type="image/png"/>
+                  <div>
+                    <span class="firstname"> <%= rec.name.upcase%></span>
+                    <span class="desg"><%= rec.designation %></span>
+                    <% if (User.current.allowed_to?(:manage_members, @project) || User.current.admin?) %>
+                      <span class="manager_view_rating" id="rating_<%=i%>" data-user_id="<%= user.id%>" onload="runRating();"></span>
+                    <% end %>
+                  </div>
+                </div>
+              </td>
+                 <% end %>
+
+        <%end%>
+        </tr>
+      </table>
+
+    <% end %>
+
+  <% if @news.any? && authorize_for('news', 'index') %>
+  <div class="news box">
+    <h3><%=l(:label_news_latest)%></h3>
+    <%= render :partial => 'news/news', :collection => @news %>
+    <p><%= link_to l(:label_news_view_all), project_news_index_path(@project) %></p>
+  </div>
+  <% end %>
+
+  <%# Due to requirement change we commented this block %>
+  <% if false %>
+    <hr>
+      <div class="issues box">
+        <h3>
+          <%= link_to 'Overdue Tickets',
+                      issues_path(:set_filter => 1, :assigned_to_id => 'me', :sort => 'priority:desc,updated_on:desc') %>
+          (<%= Issue.visible.open.where(:assigned_to_id => ([User.current.id] + User.current.group_ids)).count %>)
+        </h3>
+        <% helper = Object.new.extend(MyHelper) %>
+        <% assigned_issues = helper.issuesassignedtome_items %>
+        <%= render :partial => 'issues/list_simple', :locals => { :issues => assigned_issues } %>
+
+        <% content_for :header_tags do %>
+            <%= auto_discovery_link_tag(:atom,
+                                        {:controller => 'issues', :action => 'index', :set_filter => 1,
+                                         :assigned_to_id => 'me', :format => 'atom', :key => User.current.rss_key},
+                                        {:title => l(:label_assigned_to_me_issues)}) %>
+        <% end %>
+      </div>
+  <% end %>
+
+  <%= call_hook(:view_projects_show_right, :project => @project) %>
+</div>
+
+<% content_for :sidebar do %>
+  <%#= render :partial => 'projects/sidebar' %>
+<% end %>
+
+<% content_for :header_tags do %>
+<%= auto_discovery_link_tag(:atom, {:controller => 'activities', :action => 'index', :id => @project, :format => 'atom', :key => User.current.rss_key}) %>
+<% end %>
+
+<% html_title(l(:label_overview)) -%>
+
+
+<style>
+    #member_rate{
+        width: 100%;
+    }
+    #member_rate tr td {
+        text-align: right;
+        float: left;
+        width: 22%;
+    }
+</style>

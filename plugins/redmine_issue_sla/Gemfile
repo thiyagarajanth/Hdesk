@@ -1,0 +1,7 @@
+source 'http://rubygems.org'
+
+gem "rufus-scheduler", "3.0.3"
+gem 'jquery-timepicker-rails', '~> 1.4', '>= 1.4.3'
+
+#gem 'whenever', :require => false
+

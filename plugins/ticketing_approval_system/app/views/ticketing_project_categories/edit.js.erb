@@ -1,0 +1,32 @@
+e = document.getElementById("category_approval_configs_project_category_id");
+ca = e.options[e.selectedIndex].value
+$('#ajax-modal').html("<%= escape_javascript(render :partial => 'ticketing_project_categories/edit_modal', :locals => { :cat_id => 1 }) %>");
+showModal('ajax-modal', '500px');
+
+e = document.getElementById("category_approval_configs_project_category_id");
+id = e.options[(e.selectedIndex)].value
+$.ajax({
+    url: '/projects/'+ window.location.href.split('/')[4] +'/ticketing_project_categories/' + id +'',
+    type: 'get',
+
+    success: function(result) {
+        console.log('result')
+        console.log([result,result.dashboard_visibility==true])
+        $('#ticketing_project_categories_cat_name').val(result.name);
+        $('#ticketing_project_categories_need_approval').attr('checked',result.need_approval);
+        visib = 0;
+        if(result.dashboard_visibility==true){visib = 1}else{visib = 0}
+        $('#ticketing_project_categories_dashboard_visibility ').val(visib);
+        url = $('#new_ticketing_project_categories').attr('action');
+        value = url.substring(url.lastIndexOf('/') + 1);
+        s = url.replace(value, result.id);
+        $('#new_ticketing_project_categories').attr('action',s);
+        if (result.need_approval){
+            $('.approval').show();
+        }else{
+            $('.approval').hide();
+        }
+
+
+    }
+});

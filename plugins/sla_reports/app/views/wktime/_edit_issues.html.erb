@@ -1,0 +1,220 @@
+<%
+   @wday_index = 1
+   @trOpen = false
+   @row = 0
+   @total_hours = 0.0
+   thours = nums = Array[0.0, 0.0, 0.0, 0.0,0.0, 0.0, 0.0]
+   prev_entry = nil
+   entry = nil
+   currencySym = ""
+%>
+
+<div class="wk-contextual">
+  <% if @editable %>
+      <%= link_to l(:button_add_row), "javascript:addRow();projectChanged(document.getElementsByName('time_entry[][project_id]'),0);", :class => 'icon icon-time-add' %>
+  <% end %>
+</div>
+
+<table id="issueTable" class="list time-entries">
+  <thead>
+  <tr>
+    <%= render :partial => 'issue_header'%>
+  </tr>
+  </thead>
+  <tbody>
+  <% project_ids = get_project_ids(entries)  %>
+  <% unless entries.blank?
+       col_values = []
+       matrix_values = []
+       weeklyHash = getWeeklyView(entries, controller.getUnitLabel, false)
+       weeklyHash.each do |key, matrix|
+         matrix.each do |rows|
+           issueWritten = false
+           rows.each.with_index do |entry, i|
+  %>
+                  <% if !entry.blank?  %>
+                      <% if !issueWritten %>
+                          <% # this is a new Row %>
+                          <% # close the previously opened row first %>
+                          <%= render :partial => 'edit_hours', :locals => {:entry => nil, :isTemplate => false,
+                                                                           :padAt => 'end', :padTill => 8}%>
+
+                          <%= render :partial => 'edit_issues2', :locals => {:entry => entry, :isTemplate => false}%>
+                          <% issueWritten = true %>
+                      <% end %>
+                      <% # fill the days till the current day %>
+                      <%= render :partial => 'edit_hours', :locals => {:entry => nil, :isTemplate => false,
+                                                                       :padAt => 'begin', :padTill => i+1}%>
+                      <%= render :partial => 'edit_hours', :locals => {:entry => entry, :isTemplate => false,
+                                                                       :padAt => 'begin', :padTill => i+2}%>
+                      <% thours[i] += entry.hours unless @prev_template%>
+                      <% @total_hours += entry.hours unless @prev_template%>
+                      <% currencySym = controller.getUnit(entry) %>
+                  <% end %>
+              <% end %>
+              <% # write only the firt row for previous week template
+                 break if @prev_template %>
+          <% end %>
+      <% end %>
+
+  <% else -%>
+      <% # if there are no entries, put an empty row%>
+      <% currencySym = controller.getUnit(nil) %>
+      <%= render :partial => 'edit_issues2', :locals => {:entry => nil, :isTemplate => false}%>
+  <% end %>
+
+  <% # pad any incomplete days %>
+  <%= render :partial => 'edit_hours', :locals => {:entry => nil, :isTemplate => false,
+                                                   :padAt => 'end', :padTill => 8}%>
+
+  <!-- row for putting the total -->
+
+  <tr>
+    <td class="project"></td>
+    <td class="issue"></td>
+    <td class="activity"></td>
+    <% if !Setting.plugin_redmine_wktime['wktime_enter_comment_in_row'].blank? &&
+            Setting.plugin_redmine_wktime['wktime_enter_comment_in_row'].to_i == 1 %>
+    <td class="comments"></td>
+        <%end%>
+    <td class="not_met_header"></td>
+    <% thours.each_with_index do |th,i| %>
+        <% day = (@startday)+i %>
+
+        <td align="center">
+          <span >
+          <%= currencySym %>&nbsp;<span id=<%= "day_total_#{i+1}" %>><%= ("%.2f" % th) %></span></span>
+          <span >
+           <%#= check_bio_permission_list_user_id_project_id('l1',User.current.id,entries.map(&:project_id).uniq) || check_bio_permission_list_user_id_project_id('bio_hours_display',User.current.id,entries.map(&:project_id).uniq) || check_bio_permission_list_user_id_project_id('l2',User.current.id,entries.map(&:project_id).uniq) || check_bio_permission_list_user_id_project_id('l3',User.current.id,entries.map(&:project_id).uniq) %>
+            <%#= @project_id = entries.present? ? entries.map(&:project_id).uniq : User.current.projects.first.id %>
+            <% if (check_bio_permission_list_user_id_project_id('l1',params[:user_id],project_ids) || check_bio_permission_list_user_id_project_id('bio_hours_display',params[:user_id],project_ids) || check_bio_permission_list_user_id_project_id('l2',params[:user_id],project_ids) || check_bio_permission_list_user_id_project_id('l3',User.current.id,project_ids) ) %>
+
+                 <% date1_entry = Wktime.where(:begin_date=> day,:status=> "l1",:user_id=>params[:user_id], :project_id =>  accessable_projects(project_ids, 'l1').uniq)  %>
+                <% status = date1_entry.present? %>
+                <% date1_entry1 = Wktime.where(:begin_date=> (@startday..@startday+6),:status=> "l3",:user_id=>params[:user_id]).count  %>
+
+                <% l2_status = check_l2_status(params[:user_id],@startday+i) %>
+                <% current_user = User.where(:id=> params[:user_id]).last %>
+                <%lock_status =  check_time_log_entry(@startday+i,current_user) %>
+
+                <% if !Setting.plugin_redmine_wktime[:wktime_use_approval_system].blank? &&
+                        Setting.plugin_redmine_wktime[:wktime_use_approval_system].to_i == 1  %>
+                <% if entries.present? %>
+                 <%#= check_bio_permission_list_project_ids('bio_hours_display',entries.map(&:project_id).uniq).inspect %>
+                        <% if (check_bio_permission_list_user_id_project_id('bio_hours_display',params[:user_id],project_ids) ) %>
+                <span style="color:red">
+
+                      <%= @user_hours.present? ? @user_hours.values[0][day.strftime("%d/%m/%Y")] : '00.00' %>
+
+                </span>
+
+                <% end %>
+                    <% end %>
+             <% end %>
+
+                <%if (check_bio_permission_list_user_id_project_id('l2',params[:user_id],project_ids) || check_bio_permission_list_user_id_project_id('l3',User.current.id,project_ids) ||  !(check_bio_permission_list_user_id_project_id('l1',params[:user_id],project_ids)) || date1_entry1 >= 6)   %>
+
+                    <% status = "l2" %>
+                    <%= hidden_field_tag 'approved_days[]', @startday+i,{ :class=>"approval-checkbox approval-checkbox_#{status}",:style=>"display:none",:rowvalue => "#{i+1 }",:onclick=>"check('#{status}')"}-%>
+                <%elsif (check_bio_permission_list_user_id_project_id('l1',params[:user_id],project_ids)) && !l2_status.present? %>
+
+                    <%= check_box_tag 'approved_days[]', @startday+i, false , :class=>"approval-checkbox approval-checkbox_#{status}",:rowvalue => "#{i+1}",:onclick=>"check('#{status}');"-%>
+
+                <%end%>
+
+                <% end %>
+
+
+              </span>
+        </td>
+
+  <% end %>
+    <td>
+      <b> <%= l(:label_total) %>: <%= currencySym %>&nbsp;<span id="total_hours"><%= ("%.2f" % @total_hours) %></span></b>
+      <%=h hidden_field_tag('total', ("%.2f" % @total_hours) ) %>
+      <%=h hidden_field_tag('unit', currencySym) %>
+    </td>
+  </tr>
+
+  <% if controller.showWorktimeHeader %>
+      <!-- Remaining Hours -->
+      <%= render :partial => 'worktime_header', :locals => {:str => 'remaining_hours', :isEditable => false, :value => '0.0'}%>
+  <% end %>
+  </tbody>
+</table>
+
+<% if params[:user_id].to_i == User.current.id %>
+    <%#= submit_tag l(:button_save), :id => 'wktime_save', :name => 'wktime_save',  :disabled => !(@row > 0)%>
+    <%= submit_tag l(:button_save), :id => 'wktime_save', :name => 'wktime_save',  :disabled => true%>
+<% end %>
+<%#= project_id = entries.present? ? entries.map(&:project_id).uniq : User.current.projects.first.id %>
+<% if (check_bio_permission_list_user_id_project_id('l1',params[:user_id],project_ids) || check_bio_permission_list_user_id_project_id('l2',params[:user_id],project_ids) || check_bio_permission_list_user_id_project_id('l3',User.current.id,project_ids) ) %>
+
+    <% check_lock_status_for_week = check_lock_status_for_week(@startday,params[:user_id]) %>
+    <%check_l1_status_for_week = check_l1_status_for_week(@startday,params[:user_id]) %>
+    <%check_l2_status_for_week = check_l2_status_for_week(@startday,params[:user_id], 'l2') %>
+    <%check_l3_status_for_week = check_l2_status_for_week(@startday,params[:user_id],'l3') %>
+    <%check_work_days_for_week = check_work_days_for_week(@startday,params[:user_id]) %>
+
+    <% date1_entry1 = Wktime.where(:begin_date=> (@startday..@startday+6),:status=> "l3",:user_id=>params[:user_id]).count  %>
+
+    <% if !check_bio_permission_list_user_id_project_id('l3',User.current.id,project_ids) && date1_entry1 <= 6%>
+<%# if !check_permission_list('l3',@entries.first) %>
+        <% if @wktime.nil? || @wktime.status == 'n' || @wktime.status == 'r' || @wktime.status == 'l1' || @wktime.status == 'l2' || @wktime.status == 'l3'%>
+
+
+            <% if !Setting.plugin_redmine_wktime[:wktime_use_approval_system].blank? &&
+                    Setting.plugin_redmine_wktime[:wktime_use_approval_system].to_i == 1  %>
+                <% if (check_bio_permission_list_user_id_project_id('l3',User.current.id,project_ids)) %>
+
+
+
+                <% elsif (check_bio_permission_list_user_id_project_id('l2',params[:user_id],project_ids)) %>
+                    <% if ((params[:user_id].to_i==User.current.id.to_i) && check_work_days_for_week.present? && !check_l2_status_for_week == true )   %>
+                        <%= link_to 'l2_present', "",:style=>"display:none;",:id=>"l2_present" %>
+                        <%= submit_tag l(:button_wk_approve),:id => 'wktime_approve',:name => 'wktime_approve', :onclick => "return validateMinhour('#{controller.minHour}','#{getNonWorkingDayColumn(params[:startday])}');" %>
+                    <% elsif (@l1.nil? ||  @wktime.present? ) && !check_l2_status_for_week == true && check_work_days_for_week.present?  %>
+                        <%= submit_tag l(:button_wk_reject),:name => 'wktime_reject',:id=>"wktime_reject",:disabled=>false,:onclick => "return showNotes();"  %>
+
+                        <%= link_to 'l2_present', "",:style=>"display:none;",:id=>"l2_present" %>
+                        <%= submit_tag l(:button_wk_approve),:id => 'wktime_approve',:name => 'wktime_approve', :onclick => "return validateMinhour('#{controller.minHour}','#{getNonWorkingDayColumn(params[:startday])}');" %>
+
+                    <%end %>
+                <% elsif (check_bio_permission_list_user_id_project_id('l1',params[:user_id],project_ids))  %>
+
+                    <%#= submit_tag l(:button_wk_approve),:id => 'wktime_approve', :name => 'wktime_approve', :onclick => "return validateMinhour('#{controller.minHour}','#{getNonWorkingDayColumn(params[:startday])}');" , :disabled => !(@row > 0)%>
+                    <%= submit_tag l(:button_wk_approve),:id => 'wktime_approve',:disabled=>true,:name => 'wktime_approve', :onclick => "return validateMinhour('#{controller.minHour}','#{getNonWorkingDayColumn(params[:startday])}');" %>
+
+                <% end %>
+            <% end %>
+        <% end %>
+
+        <% if !Setting.plugin_redmine_wktime[:wktime_use_approval_system].blank? &&
+                Setting.plugin_redmine_wktime[:wktime_use_approval_system].to_i == 1 %>
+            <% @l1 = Wktime.where(:begin_date=>@startday,:user_id=>params[:id],:status=>"l1") %>
+            <% if  check_bio_permission_list_user_id_project_id('l2',params[:user_id],project_ids) %>
+                <% if controller.check_approvable_status_l2(@startday)  %>
+                    <%= submit_tag l(:button_wk_disapprove),:name => 'wktime_unapprove',:id=>"wktime_unapprove"  %>
+                <% end %>
+
+            <% elsif !@l1.nil? && check_bio_permission_list_user_id_project_id('l1',params[:user_id],project_ids) && !check_bio_permission_list_user_id_project_id('l2',params[:user_id],project_ids) %>
+                <% if (params[:user_id].to_i!=User.current.id.to_i)%>
+                    <%= submit_tag l(:button_wk_reject),:name => 'wktime_reject',:id=>"wktime_reject",:disabled=>true,:onclick => "return showNotes();"  %>
+                <%end%>
+                <% if controller.check_approvable_status_l1(@startday)  %>
+                    <%= submit_tag l(:button_wk_disapprove), :disabled=>true,:id=>"wktime_unapprove",:name => 'wktime_unapprove' %>
+                <% end %>
+
+            <% end %>
+        <% end %>
+    <% end %>
+<% end %>
+
+<div class="splitcontentright">
+  <div class="contextual">
+    <% if @editable %>
+        <%= link_to l(:button_add_row), "javascript:addRow();projectChanged(document.getElementsByName('time_entry[][project_id]'),0);", :class => 'icon icon-time-add' %>
+    <% end %>
+  </div>
+</div>
+<%= context_menu time_entries_context_menu_path %>

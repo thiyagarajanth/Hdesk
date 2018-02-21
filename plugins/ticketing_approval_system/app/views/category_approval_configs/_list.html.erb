@@ -1,0 +1,186 @@
+<div class="list_container">
+  <%# cache 'recent_tags' do %>
+<%# ids = @project.ticket_tags.map(&:id)%>
+<%# tickets = TicketApproval.where(:ticket_tag_id => ids).group('ticket_tag_id') %>
+<% tags = @tag_list %>
+
+<% root = @root %>
+<div class="list_container" id="tag_search">
+  <%= form_tag settings_project_path(params[:id], 'ticketing_approval_system'), :method => 'get' do %>
+    
+    <%= label_tag 'Search Here',nil, :id => 'search_label'%>
+    <%= text_field_tag :category, nil, {id: 'search_category', style:'width: 15%',   "data-key"=>@category_names[0],  "data-value"=>@category_names[1]} %>
+    <%= text_field_tag :search_tags,nil, {id: 'search_tag', style:'width: 35%', placeholder: "Tag name(Optional)", "data-ids"=>@tag_ids} %>
+    <%= submit_tag "Find", :name => nil, :class => 'find_tag' %>
+    <%= button_tag "Clear", :name => nil, :class => 'find_tag' , :type => 'button', :id => 'clear_tag'%>
+  <% end %>
+
+</div>
+<table id="tk_app_list" border="1">
+  <thead>
+      <tr>
+        <th class="tk_app_cat"> Category </th>
+            <th class="tk_app_val" colspan=<%= root %> >
+               Values
+            </th>
+         <%roles = ApprovalRole.where(:project_id => @project.id).order('level')%>
+         <th class='level'>
+              Self
+            </th>
+          <% roles.each do |role|%>
+            <th class='level'>
+              <%= role.name %>
+            </th>
+          <%end%>
+        <th> Max validity</th>
+        <th> Agreement </th>
+        <th class="tk_app_act"> Actions </th>
+      </tr>
+  </thead>
+  <tbody>
+
+      <%  tags.flatten.each do |approval|%>
+      <%if approval.child.nil?%>
+        <% inter = approval.ticket_approvals.where(:user_id => nil)%>
+        <% high = approval.ticket_approvals.where(:approval_role_id => nil) %>
+            <% add_class = high.compact.present? ? 'interruptRowColor' : ''%>
+            <% approval.have_agreement.present? ? code = 'agreementcolor' : code = '' %>
+            <tr class="<%= add_class%>" id="<%= code %>">
+              <td><%= approval.category.cat_name.split(' ').collect(&:capitalize).join(' ') rescue ''%></td>
+
+              <% tag = approval%>
+              <% a = []%>
+              <% root.times do |x| %>
+              <% a << tag.name rescue nil %>
+              <%tag = tag.parent rescue nil%>
+              <%end%>
+
+              <% root.times do |x| %>
+              <td>
+                <%= a.reverse[x] rescue nil %>
+              </td>
+              <% end %>
+                 <td class="level " >
+                <%= check_box_tag 'self', true,true, :disabled =>  true %>
+              </td>
+                <%ids1 = inter.map(&:approval_role_id)%>
+              <%roles = ApprovalRole.where(:project_id => @project.id).order('level')%>
+            <% roles.each_with_index do |role, i|%>
+
+             <%if inter[i].present? && inter[i].child.present? && inter[i].child.user.present? %>
+              <% css_color = 'approval_level' %>
+              <%types = inter[i].child.can_override == true ? 'Override' : "Intermediate"%>
+              <% set_title = "#{types}( #{inter[i].child.user.firstname} )"%>
+             <%else%>
+              <% css_color = '' %>
+              <% set_title = ''%>
+             <%end%>
+
+              <td class="level <%= css_color%>" title="<%= set_title%>" >
+                <%= check_box_tag role.name,'true', ids1.include?(role.id), :disabled =>  true %>
+              </td>
+            <%end%>
+              <td class="tk_app_act"><%= approval.validity  %></td>
+              <% approval.have_agreement.present? ? code = 'approval_level' : code = '' %>
+              <td class="level <%=code %> " title="<%= "#{approval.agreement_code}(#{approval.agreement_name})"%>">
+
+              <%= check_box_tag 'aggreement','true',approval.have_agreement,:disabled => true %></td>
+               <%= hidden_field_tag 'page', params[:page] %>
+              <td class="tk_app_act">
+                <%= link_to image_tag('edit.png'), edit_project_approval_definition_path(@project, approval, :page => params[:page]),
+                            :title => l(:button_edit) %>
+                <%= link_to(image_tag('delete.png'), project_approval_definition_path(@project, approval.id),
+                            :data => {:confirm => l(:text_are_you_sure)}, :method => :delete, :title => 'Delete')  %>
+              </td>
+            </tr>
+        <% end %>
+      <% end %>
+  </tbody>
+</table>
+
+
+<div id="tk_app_pagination">
+    <%#= will_paginate tickets %>
+    <% hidden_field_tag 'param_tab',params[:tab] %>
+
+    <%= pagination_links_full @tag_pages, @tag_count  %>
+</div>
+</div>
+<%# end %>
+
+  <!-- <p class="pagination"><%= pagination_links_full @tag_pages, @tag_count  %></p> -->
+<%#= params.inspect %>
+
+<div id="hiddenModalReportConfirom" style="display: none;" title="Overdue Issues">
+
+  <%#= link_to "CSV", export_tags_project_approval_definitions_path(format: "csv",project_id:params["id"],category_id: params[:category],tags:params[:search_tags]) %> |
+</div>
+
+
+<% other_formats_links do |f| %>
+    <%#= f.link_to 'Atom', :url => params.merge(:key => User.current.rss_key) %>
+    <%= f.link_to 'CSV', :url => params, :onclick => "showModal('csv-export-options', '350px'); return false;" %>
+    <%#= f.link_to 'PDF', :url => params %>
+<% end %>
+
+<div id="csv-export-options" style="display:none;">
+  <h3 class="title"><%= l(:label_export_options, :export_format => 'CSV') %></h3>
+  <%= form_tag(export_tags_project_approval_definitions_path(format: "csv",project_id:params["id"],category_id: params[:category],tags:params[:search_tags]), :method => :get, :id => 'csv-export-form') do %>
+      <p>
+        <%= hidden_field_tag 'category_id',params[:category] %>
+        <%= hidden_field_tag 'tags',params[:search_tags] %>
+        <label><%= radio_button_tag 'columns', '', true %> <%= l(:description_selected_filter) %></label><br />
+        <label><%= radio_button_tag 'columns', 'all' %> <%= l(:description_all_cats) %></label>
+      </p>
+      <p>
+        <!--<label><%#= check_box_tag 'description', '1', @query.has_column?(:description) %> <%#= l(:field_description) %></label>-->
+      </p>
+
+      <p class="buttons">
+        <%= submit_tag l(:button_export), :name => nil, :onclick => "hideModal(this);" %>
+        <%= submit_tag l(:button_cancel), :name => nil, :onclick => "hideModal(this);", :type => 'button' %>
+      </p>
+  <% end %>
+</div>
+
+
+
+  <%#= link_to "Excel", products_path(format: "xls") %>
+  <%#= link_to "Export to csv", request.parameters.merge({:format => :csv})%>
+
+<script>
+$('#tab-ticketing_approval_system').click(function(){
+  $('.pagination').hide();
+});
+</script>
+
+<%= javascript_tag defer: 'defer' do -%>
+    $(document).ready(function(){
+     $('#tab-ticketing_approval_system').click(function(){
+        $('#tk_app_pagination a').each(function () {
+    console.log('iiiiiiii')
+          var url = $(this).attr('href');
+          change = url.split('?')
+          total = url.split('/')
+            if (total.length < 5 ){
+              url =  change[0] + '/ticketing_approval_system?' + change[1]
+            }
+          if (total.length == 5 && change[0].split('/').pop() != 'ticketing_approval_system'){
+            str = change[0]
+            res = str.substring(0, str.lastIndexOf("/") + 1);
+            url =  res + 'ticketing_approval_system?' + change[1]
+          }
+          $(this).attr('href',url);
+        });
+      });
+        var id = $("#search_category").attr('data-key');
+        var name = $("#search_category").attr('data-value');
+        setTimeout(function(){
+        $("#search_category").select2('data', {id: id, text: name})},1000);
+
+     $('#clear_tag').click(function(){
+        window.location.href = window.location.href.split('?')[0];;
+     });
+    });
+
+<% end -%>

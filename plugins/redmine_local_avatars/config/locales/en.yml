@@ -1,0 +1,21 @@
+# English strings go here
+en:
+  label_avatar: "Avatar"
+  label_my_avatar: "My avatar"
+  label_cameras: "Cameras"
+  label_capture_or_upload: "Capture or Upload"
+  label_preview_and_crop: "Preview and Crop"
+  label_preview: "Preview"
+  label_upload: "Upload"
+  label_webcam: "Webcam"
+
+  button_change_avatar: "Change local avatar"
+  button_stop_webcam: "Stop"
+  button_start_webcam: "Start"
+  button_capture_photo: "Capture"
+  are_you_sure_delete_avatar: "Are you sure you want to delete your avatar?"
+  avatar_deleted:  "Avatar deleted"
+  unable_to_delete_avatar:  "Sorry.  There was an error deleting the avatar"
+  message_avatar_uploaded: "Avatar uploaded successfully"
+  label_added_time_by_avatar: " %{author} added %{age} ago"
+  label_updated_time_by_avatar: " %{author} updated %{age} ago"

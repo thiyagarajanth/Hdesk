@@ -1,0 +1,6 @@
+<%= javascript_include_tag 'inia_members', :plugin => "inia_projects" %>
+<%= stylesheet_link_tag 'sla_reports', :plugin => "sla_reports" %>
+
+<% helper = Object.new.extend(IniaProjectsHelper) %>
+<%= render_tabs helper.inia_projects_settings_tabs %>
+<% html_title(l(:label_settings), l(:label_administration)) -%>

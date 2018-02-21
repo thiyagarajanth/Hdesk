@@ -1,0 +1,45 @@
+div.gravatar {
+    padding: 2px;
+    border: 1px solid rgb(213, 213, 213);
+    background: none repeat scroll 0% 0% rgb(255, 255, 255);
+    vertical-align: middle;
+}
+
+div#preview-box {
+	width: 128px;
+	height: 128px;
+	border: 1px silver solid;
+}
+
+div#preview-box div {
+	width: 128px;
+	height: 128px;
+}
+
+div#avatar-buttons div {
+	display: inline;
+}
+
+.blank-avatar, .crop-avatar, .capture-avatar {
+	width: 300px;
+	height: 300px;
+	margin: 3px 0px 3px 180px;
+}
+
+.crop-avatar {
+	height: inherit;
+}
+
+.capture-avatar div {
+	width: 300px;
+	height: 300px;
+}
+
+.crop-avatar .cropbox, .blank-avatar img {
+	width: 300px;
+	display: block;
+}
+
+.crop-avatar, .capture-avatar, #capture-cameras, button#stop-webcam {
+	display: none;
+}

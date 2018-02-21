@@ -1,0 +1,9 @@
+# English strings go here for Rails i18n
+en:
+  lable_default_assignee: "Default Assignee"
+  lable_field_tracker: "Tracker"
+  lable_field_default_assignee: "Default Assignee"
+  lable_for_select_tracker: "Select Tracker"
+  lable_for_select_assignee: "Select Assignee"
+  label_status: "Status"
+  label_assignee: "Assignee"

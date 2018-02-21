@@ -1,0 +1,502 @@
+<% category_appr_config_helper = Object.new.extend(CategoryApprovalConfigsHelper) %>
+<%= stylesheet_link_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+<%= javascript_include_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+
+<%#= stylesheet_link_tag 'sla', :plugin => "redmine_issue_sla" %>
+<%#= javascript_include_tag 'sla', :plugin => "redmine_issue_sla" %>
+
+
+<%= render :partial => 'action_menu' %>
+
+<h2><%= issue_heading(@issue) %></h2>
+
+<div class="<%= @issue.css_classes %> details">
+  <% if @prev_issue_id || @next_issue_id %>
+      <div class="next-prev-links contextual">
+        <%= link_to_if @prev_issue_id,
+                       "\xc2\xab #{l(:label_previous)}",
+                       (@prev_issue_id ? issue_path(@prev_issue_id) : nil),
+                       :title => "##{@prev_issue_id}" %> |
+        <% if @issue_position && @issue_count %>
+            <span class="position"><%= l(:label_item_position, :position => @issue_position, :count => @issue_count) %></span> |
+        <% end %>
+        <%= link_to_if @next_issue_id,
+                       "#{l(:label_next)} \xc2\xbb",
+                       (@next_issue_id ? issue_path(@next_issue_id) : nil),
+                       :title => "##{@next_issue_id}" %>
+      </div>
+  <% end %>
+
+
+  <div class="subject" style="float:left">
+    <%= render_issue_subject_with_tree(@issue) %>
+  </div>
+
+  <div style="float:right">
+   <% if @issue.status.name == 'Closed' %>
+     <div id='showRate' title='Satisfaction Rating'>.</div>
+   <%  end %>
+  </div>
+  <div style="float:left;width:100%">
+
+    <p class="author" style="float:left;">
+      <span style="float:left;"> <%= avatar(@issue.author, :size => "50") %></span>
+      <span class='avatar-img'>
+      <%= authoring @issue.created_on, @issue.author %>.
+      <% if @issue.created_on != @issue.updated_on %>
+          <%= l(:label_updated_time, time_tag(@issue.updated_on)).html_safe %>.
+      <% end %></span>
+    </p>
+
+  </div>
+
+
+  <%#= javascript_include_tag 'ticketing_approval', :plugin => "ticketing_approval_system" %>
+
+  <div>
+<% sla_module = @issue.project.enabled_modules.map(&:name).include?('redmine_issue_sla')%>
+    <% plugin_list = []%>
+    <% Redmine::Plugin.registered_plugins.each{ |x| plugin_list << x[0] } %>
+  <% if plugin_list.include?(:redmine_issue_sla) && sla_module %>
+    <% sla_time_helper = Object.new.extend(SlaTimeHelper) %>
+    <% if sla_module && Object.new.extend(SlaTimeHelper).check_project_permission(User.current.project_ids, :response_sla) %>
+        <div id = 'respond_msg'>
+          <% if @issue.response_time.present? %>
+              <%user = User.find(@issue.response_time.user_id).name %>
+              <p>
+                <%= "Responded by #{user}" %>,
+
+                <%=  l(:label_responded_time, time_tag(@issue.response_time.updated_at)).html_safe  %>
+              <li>
+                <ol>
+                  <%= @issue.response_time.comment%></ol></li>
+              </p>
+              <hr>
+          <%end%>
+          <p></p>
+        </div>
+        <%#else%>
+        <div id = 'get_respond'>
+          <div style="float:right">
+            <%= button_tag "Respond to this Issue", :id => 'response_btn','data-project_id' =>@issue.project.id , 'data-issue_id' =>@issue.id %>
+
+          </div>
+      <span id='response_area' >
+          <span id='cmt_error'>Please enter comment.</span>
+         <span style="font:normal 11px sans-serif;color:#B00400;float:right;margin-right: 25px;">
+                 <span class='counter_msg'></span>
+        </span>
+        <%= text_area_tag 'comment',nil, :id => 'comment', rows: 3, cols: 110, maxlength: 300 %>
+        <br>
+        <%= button_tag 'Save', :id => 'save_response', :onclick =>"this.disabled=true;this.value='Sending, please wait...';this.form.submit();"  %>
+        <%= button_tag 'Cancel', :id => 'cancel_response' %>
+        </span>
+          <hr>
+        </div>
+        <%#end%>
+    <%end%>
+  <%end%>
+<%#  pending =  @issue.ticket_approval_flows.where(:user_id => User.current.id, :status => 'pending').present? && @issue.status.name=='Waiting for approval'%>
+<%  pending =  @issue.status.name=='Waiting for approval'%>
+<% clarity =  @issue.ticket_approval_flows.where(:status => 'Information required').present? && (@issue.status.name=='Need Clarification' || @issue.status.name=='Information requested') %>
+<% approve =  @issue.project.enabled_modules.map(&:name).include?('ticketing_approval_system') && @issue.tracker.core_fields.include?('approval_workflow') && @issue.assigned_to == User.current  && @issue.ticket_approval_flows.present? %>
+<% approval_state =  @issue.ticket_approval_flows.present? && @issue.ticket_approval_flows.last.user_id == @issue.author_id%>
+
+
+    <% if approve %>
+        <div id = 'tkt_get_respond' url="<%= request.referer%>">
+          <div style="float:right" id="respond_group">
+            <% role = @issue.current_user_role(@issue)%>
+            <% if pending && !clarity%>
+              <%= button_tag "Approve", :id => 'approve_btn_tkt', :name => 'approve','data-role' => role,'data-project_id' =>@issue.project.id , 'data-issue_id' =>@issue.id %>
+              <%= button_tag "Need Clarification", :id => 'clarification_btn', :name => 'clarification','data-role' => role,'data-project_id' =>@issue.project.id , 'data-issue_id' =>@issue.id %>
+          <% end %>
+            <% if clarity && !pending %>
+              <% data = @issue.author_id == User.current.id ?  true : false %>
+                <%= button_tag "Provide Information", :id => 'approve_btn_tkt', :name => 'approve','data-author' => data,'data-role' => role,'data-project_id' =>@issue.project.id , 'data-issue_id' =>@issue.id, :class => 'p_clarification_btn' %>
+            <% end %>
+            <% if clarity && @issue.author_id!=User.current.id %>
+                <%= button_tag "Need Clarification", :id => 'clarification_btn', :name => 'clarification','data-role' => role,'data-project_id' =>@issue.project.id , 'data-issue_id' =>@issue.id %>
+            <% end %>
+            <% if pending || clarity%>
+                <%= button_tag "Reject", :id => 'reject_btn_tkt', :name => 'reject','data-project_id' =>@issue.project.id , 'data-issue_id' =>@issue.id %>
+          <% end %>
+
+          </div>
+      <span id='tkt_response_area' style="float: left;display: none" >
+          <span id='tkt_cmt_error'>Please enter comment.</span>
+         <span style="font:normal 11px sans-serif;color:#B00400;float:right;margin-right: 25px;">
+                 <span class='tkt_counter_msg'></span>
+        </span>
+        <%= text_area_tag 'comment',nil, :id => 'tkt_comment', rows: 3, cols: 123, maxlength: 300 %>
+        <br>
+        <%= button_tag 'Save', :id => 'save_tkt', :onclick =>"this.disabled=true;this.value='Sending, please wait...';this.form.submit();" %>
+        <%= button_tag 'Cancel', :id => 'cancel_tkt' %>
+        </span>
+          <hr style="float: left">
+        </div>
+        <%#end%>
+    <%end%>
+
+  </div>
+
+
+  <table class="attributes">
+    <%= issue_fields_rows do |rows|
+      rows.left l(:field_status), h(@issue.status.name), :class => 'status'
+      rows.left l(:field_priority), h(@issue.priority.name), :class => 'priority'
+      approval_status =  IssueSlaStatus.where(:project_id => @issue.project.id, :tracker_id => @issue.tracker.id, :approval_sla => true).map(&:issue_status_id)
+        
+      if approval_status.include? @issue.status_id
+        rows.right 'Approver Pending Time', "#{sla_time_helper.get_approver_sla(@issue) } hours", :class => 'estimated-hours'
+      end
+      unless @issue.disabled_core_fields.include?('estimated_hours')
+        unless @issue.estimated_hours.nil?
+          rows.right l(:field_estimated_hours), l_hours(sla_time_helper.time_fomrmat(@issue.estimated_hours)), :class => 'estimated-hours'
+        end
+      end
+      unless approval_status.include? @issue.status_id
+        if plugin_list.include?(:redmine_issue_sla) && @issue.project.enabled_modules.map(&:name).include?('redmine_issue_sla') && @issue.project.issue_slas.count > 0
+           sla_time =  sla_time_helper.sla_time_count(@issue) rescue 0
+           spent_time = sla_time_helper.get_spent_time(sla_time, @issue)
+           rows.right l(:label_sla_time), (spent_time.present? ?  l_hours(spent_time)  : "-"), :class => 'spent-time'
+           rows.right l(:label_difference_time), "#{sla_time rescue 0} hours", :class => 'estimated-hours'
+        end
+      end
+      if User.current.allowed_to?(:view_time_entries, @project) #&& @issue.total_spent_hours > 0
+        #rows.right l(:label_spent_time), (@issue.total_spent_hours > 0 ? link_to(l_hours(@issue.total_spent_hours), issue_time_entries_path(@issue)) : "-"), :class => 'spent-time'
+        rows.right l(:label_spent_time), (@issue.total_spent_hours > 0 ? link_to(l_hours(sla_time_helper.time_fomrmat(@issue.total_spent_hours)), issue_time_entries_path(@issue)) : "-"), :class => 'spent-time'
+      end
+
+      unless @issue.disabled_core_fields.include?('projects')
+        proj = @issue.inia_project.present? ? @issue.inia_project.name : ''
+        rows.left 'Project', proj, :class => 'assigned-to'
+        rows.left l(:field_project_category), h(@issue.project_category ? @issue.project_category.cat_name : "-"), :class => 'assigned-to'
+      end
+
+      unless @issue.disabled_core_fields.include?('assigned_to_id')
+        rows.left l(:field_assigned_to), (avatar(@issue.assigned_to, :size => "14").to_s.html_safe rescue '') + (@issue.assigned_to ? link_to_user(@issue.assigned_to) : "-"), :class => 'assigned-to'
+      end
+      unless @issue.disabled_core_fields.include?('category_id')
+        rows.left l(:field_category), h(@issue.category ? @issue.category.name : "-"), :class => 'category'      end
+      unless @issue.disabled_core_fields.include?('fixed_version_id')
+        rows.left l(:field_fixed_version), (@issue.fixed_version ? link_to_version(@issue.fixed_version) : "-"), :class => 'fixed-version'
+      end
+
+      unless @issue.disabled_core_fields.include?('start_date')
+        rows.right l(:field_start_date), format_date(@issue.start_date), :class => 'start-date'
+      end
+      unless @issue.disabled_core_fields.include?('due_date')
+        rows.right l(:field_due_date), format_date(@issue.due_date), :class => 'due-date', :data_vaidity => @issue.ticket_tag ? @issue.ticket_tag.validity : '0'
+      end
+      unless @issue.disabled_core_fields.include?('done_ratio')
+        rows.right l(:field_done_ratio), progress_bar(@issue.done_ratio, :width => '80px', :legend => "#{@issue.done_ratio}%"), :class => 'progress'
+      end
+
+      #if User.current.allowed_to?(:view_time_entries, @project)
+        #rows.right l(:label_spent_time), (@issue.total_spent_hours > 0 ? link_to(l_hours(@issue.total_spent_hours), issue_time_entries_path(@issue)) : "-"), :class => 'spent-time'
+      #end
+
+    end %>
+
+    <%= render_custom_fields_rows(@issue) %>
+    <%= call_hook(:view_issues_show_details_bottom, :issue => @issue) %>
+  </table>
+
+  <% if @issue.description? || @issue.attachments.any? -%>
+      <hr />
+      <% if @issue.description? %>
+          <div class="description">
+            <div class="contextual">
+              <%= link_to l(:button_quote), quoted_issue_path(@issue), :remote => true, :method => 'post', :class => 'icon icon-comment' if authorize_for('issues', 'edit') %>
+            </div>
+
+            <p><strong><%=l(:field_description)%></strong></p>
+            <div class="wiki">
+              <%= textilizable @issue, :description, :attachments => @issue.attachments %>
+            </div>
+          </div>
+      <% end %>
+      <%= link_to_attachments @issue, :thumbnails => true %>
+  <% end -%>
+
+  <!--<p id="watchers_form"><label><%#= l(:label_issue_access_users) %></label>-->
+      <!--<span id="access_users_inputs">-->
+        <!--<%#= @available_access_users.inspect %>-->
+        <!--<%#= access_users_checkboxes(@issue, @available_access_users) %>-->
+      <!--</span>-->
+      <!--<span class="search_for_watchers">-->
+      <!--<%#= link_to l(:label_search_for_access_users),-->
+                  <!--{:controller => 'watchers', :action => 'new', :project_id => @issue.project},-->
+                  <!--:remote => true,-->
+                  <!--:method => 'get' %>-->
+        <%#= link_to l(:label_search_for_access_users),
+#                     {:controller => 'ticketing_project_categories', :action => 'add_access_users', :project_id => @issue.project},
+#                     :remote => true,
+                    :method => 'post' %>
+      <!--</span>-->
+  <!--</p>-->
+
+
+
+    <hr />
+    <%# if !@issue.closed? && @issue.status.name != 'Resolved' #@issue.access_users.present? %>
+        <div class="access_users">
+
+
+          <p><strong><%=l(:field_access_users)%></strong></p>
+          <div class="wiki">
+            <% @issue.access_users.each do |each_user| %>
+              <ul>
+               <li> <%= category_appr_config_helper.get_user_firstname_lastname(each_user) %><br>
+               </li>
+             </ul>
+            <% end %>
+          </div>
+
+          <p id="watchers_form">
+
+            <%= form_tag({:controller => 'ticketing_project_categories',
+                          :action => 'update_access_users',
+                          :project_id => @project,:issue_id=>@issue.id},
+
+                         :method => :post,
+                         :id => 'new-access-users-form') do %>
+      <span id="access_users_inputs">
+        <%#= @available_access_users.inspect %>
+        <%#= access_users_checkboxes(@issue, @available_access_users) %>
+      </span>
+      <span class="search_for_watchers">
+      <%#= link_to l(:label_search_for_access_users),
+                  {:controller => 'watchers', :action => 'new', :project_id => @issue.project},
+                  :remote => true,
+                  :method => 'get' %>
+
+       <% if category_appr_config_helper.get_issue_status(@issue)  %>
+        <%= link_to l(:label_search_for_access_users),
+                    {:controller => 'ticketing_project_categories', :action => 'add_access_users', :issue_id=>@issue.id, :project_id => (@issue.inia_project.id rescue nil)},
+                   :remote => true,
+                    :method => 'post' %>
+        <% end %>
+      </span>
+
+                <p class="buttons">
+                  <%= hidden_field_tag 'issue[user_access_user_ids][]'%>
+                  <%= submit_tag "Update User List", :name => nil,:id=>"access_users_update" ,:style=>"display:none" %>
+                  <%#= submit_tag l(:button_cancel), :name => nil, :onclick => "hideModal(this);", :type => 'button' %>
+                </p>
+
+                <% end %>
+          </p>
+        </div>
+        <% code = @issue.ticket_tag %>
+
+        <% if @issue.status.name == "Accept Agreement" && @issue.author_id == User.current.id && @issue.issue_ticket_tag.accept_agreement != true %>
+          <%if code.have_agreement == true %>
+            <hr>
+                <div class="view_agreement">
+                  <span>Please read and accept the agreement here</span>
+                  <span><%= button_tag "View agreement",id: "agreement_view" %></span>
+                </div>
+            </hr>
+          <% end %>
+        <% end %>
+        <% agg_code = code.agreement_code rescue '' %>
+
+        <div class="agreement_pop" style="display:none" >
+        <span id="code" data-code="<%= agg_code%>"></span>
+     
+        <div class="box" id="view_agreement" style="display:none"></div>
+        <div id="agree_msg"><b>Please type I AGREE and submit.</b> </div>
+          <div class="box">
+          <%= text_area_tag "iagree" %>
+          <span class='msg'></span>
+          <% datas = @issue.author_id == User.current.id ?  true : false %>
+            </br>
+            <div>
+              <%= button_tag "Accept", :class=>'save_view_agreement','data-project_id' =>@issue.project.id , 'data-author' => datas,
+              'data-issue_id' =>@issue.id %>
+              <button type='reset' class='cancel_view_agreement' value='Reset'>Cancel</button>
+            </div>
+          </div>
+        </div>
+    <%# end %>
+    <%#= link_to_attachments @issue, :thumbnails => true %>
+
+
+
+
+
+  <%= call_hook(:view_issues_show_description_bottom, :issue => @issue) %>
+
+  <% if !@issue.leaf? || User.current.allowed_to?(:manage_subtasks, @project) %>
+      <hr />
+      <div id="issue_tree">
+        <div class="contextual">
+          <%= link_to_new_subtask(@issue) if User.current.allowed_to?(:manage_subtasks, @project) %>
+        </div>
+        <p><strong><%=l(:label_subtask_plural)%></strong></p>
+        <%= render_descendants_tree(@issue) unless @issue.leaf? %>
+      </div>
+  <% end %>
+
+  <% if @relations.present? || User.current.allowed_to?(:manage_issue_relations, @project) %>
+      <hr />
+      <div id="relations">
+        <%= render :partial => 'relations' %>
+      </div>
+  <% end %>
+
+</div>
+
+<% if @changesets.present? %>
+    <div id="issue-changesets">
+      <h3><%=l(:label_associated_revisions)%></h3>
+      <%= render :partial => 'changesets', :locals => { :changesets => @changesets} %>
+    </div>
+<% end %>
+
+<% if @journals.present? %>
+    <div id="history">
+      <h3><%=l(:label_history)%></h3>
+      <%= render :partial => 'history', :locals => { :issue => @issue, :journals => @journals } %>
+    </div>
+<% end %>
+
+
+<div style="clear: both;"></div>
+<%= render :partial => 'action_menu' %>
+
+<div style="clear: both;"></div>
+<% if @issue.editable? %>
+    <div id="update" style="display:none;">
+      <h3><%= l(:button_edit) %></h3>
+      <%= render :partial => 'edit' %>
+    </div>
+<% end %>
+
+<% other_formats_links do |f| %>
+    <%= f.link_to 'Atom', :url => {:key => User.current.rss_key} %>
+    <%= f.link_to 'PDF' %>
+<% end %>
+
+<% html_title "#{@issue.tracker.name} ##{@issue.id}: #{@issue.subject}" %>
+
+<% content_for :sidebar do %>
+    <%= render :partial => 'issues/sidebar' %>
+
+    <% if User.current.allowed_to?(:add_issue_watchers, @project) ||
+            (@issue.watchers.present? && User.current.allowed_to?(:view_issue_watchers, @project)) %>
+        <div id="watchers">
+          <%= render :partial => 'watchers/watchers', :locals => {:watched => @issue} %>
+        </div>
+    <% end %>
+<% end %>
+
+<% content_for :header_tags do %>
+    <%= auto_discovery_link_tag(:atom, {:format => 'atom', :key => User.current.rss_key}, :title => "#{@issue.project} - #{@issue.tracker} ##{@issue.id}: #{@issue.subject}") %>
+<% end %>
+
+<%= context_menu issues_context_menu_path %>
+<%= javascript_tag do %>
+    $(document).ready(function(){
+    if ($("#showRate").is(":visible") == true) {
+        id = window.location.href.split('/')[4]
+        $.ajax({
+        url: '/projects/12/issues/check_rating',
+        type: "GET",
+        data: {issue_id: id},
+        success: function (data) {
+        console.log(data.data)
+            $("#showRate").jRate({
+            readOnly: true,
+            rating: data.data,
+            width: 17,
+            height: 17,
+            backgroundColor: 'black',
+            startColor: '#f58220',
+            endColor: '#f58220'
+            })
+        }
+        });
+      }
+    })
+<%end%>
+
+
+
+<script type="text/javascript">
+$('#agreement_view').click(function(e) {
+  $('.agreement_pop').dialog({
+      height: 690,
+                // scrollable: true,
+                width: 1000,
+                modal: true
+  });
+  var code = $('#code').data('code')
+  console.log('s')
+  console.log(code)
+  $.ajax({url: "/approval_definitions/agreement_view?code="+ code.toString(),
+          type: "POST",
+         dataType: "json",
+          // This goes to Controller in params hash, i.e. params[:file_name]
+    complete: function () {},
+    success: function (result) {
+      $('#view_agreement').html("<iframe src=data:application/pdf;base64,"+result["result"]+" style=width:100% height:500px; id='frame' frameborder='0'></iframe>");
+      $('#view_agreement').show();
+      $('#frame').show();
+      console.log(result)}
+  });
+        
+  $('#view_agreement').html();
+  setTimeout(function() {
+        
+        $('span#ui-id-3').html('Agreement Info')
+      },100);
+     
+  e.preventDefault;
+  
+});
+$('.save_view_agreement').click(function(e) {
+  agree = $('#iagree').val()
+  console.log('tttttt')
+  console.log(agree)
+  var str = agree.toLowerCase();
+  var agree_string = $.trim(str);
+  console.log('77777')
+  // console.log(string.replace(/\s/g, ''))
+  // var agree_string = string.replace(/\s/g, '')
+  console.log(agree_string)
+  console.log('8888')
+  if (agree_string == "i agree" ||agree_string == "i do not agree"  ) {
+    issue_id = $('.save_view_agreement').attr('data-issue_id')
+    project_id = $('.save_view_agreement').attr('data-project_id')
+    author = $('.save_view_agreement').attr('data-author')
+    $.ajax({url: "/projects/"+project_id+"/approval_definitions/accept_agreement",
+      type: 'get',
+      data: {project_id: project_id ,agree_status:agree_string, issue_id: issue_id,author: author},
+      complete: function () {},
+      success: function (result) {}
+    })
+    $('.agreement_pop').dialog('close');
+    location.reload(true)
+  }
+  else {
+    $('.msg').html('Wrong Input.Please Type I AGREE or I DO NOT AGREE')
+    $('.msg').show();
+  }
+});
+$('.cancel_view_agreement').click(function(){
+  $('#iagree').val('');
+  $('.msg').hide();
+  $('.agreement_pop').dialog('close');
+});
+</script>
+<style type="text/css">
+#frame{
+  height:500px;
+}
+.msg{
+  color:red;
+}
+</style>
